@@ -102,13 +102,13 @@ vector<bool> OracleFactory::analyze() {
             vulnerabilities[i] = has_delegate && !has_transfer;
             break;
           }
-          case UNDERFLOW: {
+          case INT_UNDERFLOW: {
             for (auto ctx: function) {
               vulnerabilities[i] = vulnerabilities[i] || ctx.payload.isUnderflow;
             }
             break;
           }
-          case OVERFLOW: {
+          case INT_OVERFLOW: {
             for (auto ctx: function) {
               vulnerabilities[i] = vulnerabilities[i] || ctx.payload.isOverflow;
             }

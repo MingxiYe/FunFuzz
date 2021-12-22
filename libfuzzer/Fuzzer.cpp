@@ -123,8 +123,8 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bLTR bV5 cGRN " oracle yields " cRST bV bV10 bV5 bV bTTR bV2 bV10 bV bBTR bV bV2 bV5 bV5 bV2 bV2 bV5 bV bRTR "\n");
   printf(bH "            gasless send : %s " bH " dangerous delegatecall : %s " bH "\n", toResult(vulnerabilities[GASLESS_SEND]), toResult(vulnerabilities[DELEGATE_CALL]));
   printf(bH "      exception disorder : %s " bH "         freezing ether : %s " bH "\n", toResult(vulnerabilities[EXCEPTION_DISORDER]), toResult(vulnerabilities[FREEZING]));
-  printf(bH "              reentrancy : %s " bH "       integer overflow : %s " bH "\n", toResult(vulnerabilities[REENTRANCY]), toResult(vulnerabilities[OVERFLOW]));
-  printf(bH "    timestamp dependency : %s " bH "      integer underflow : %s " bH "\n", toResult(vulnerabilities[TIME_DEPENDENCY]), toResult(vulnerabilities[UNDERFLOW]));
+  printf(bH "              reentrancy : %s " bH "       integer overflow : %s " bH "\n", toResult(vulnerabilities[REENTRANCY]), toResult(vulnerabilities[INT_OVERFLOW]));
+  printf(bH "    timestamp dependency : %s " bH "      integer underflow : %s " bH "\n", toResult(vulnerabilities[TIME_DEPENDENCY]), toResult(vulnerabilities[INT_UNDERFLOW]));
   printf(bH " block number dependency : %s " bH "%s" bH "\n", toResult(vulnerabilities[NUMBER_DEPENDENCY]), padStr(" ", 32).c_str());
   printf(bBL bV20 bV2 bV10 bV5 bV2 bV bBTR bV10 bV5 bV20 bV2 bV2 bBR "\n");
 }
@@ -140,14 +140,14 @@ void Fuzzer::writeStats(const Mutation &mutation) {
   root.put("speed", (double) fuzzStat.totalExecs / timer.elapsed());
   root.put("queueCycles", fuzzStat.queueCycle);
   root.put("uniqExceptions", uniqExceptions.size());
-  root.put("gasless send", toResult(vulnerabilities[GASLESS_SEND]);
+  root.put("gasless send", toResult(vulnerabilities[GASLESS_SEND]));
   root.put("dangerous delegatecall", toResult(vulnerabilities[DELEGATE_CALL]));
   root.put("exception disorder", toResult(vulnerabilities[EXCEPTION_DISORDER]));
   root.put("freezing ether", toResult(vulnerabilities[FREEZING]));
   root.put("reentrancy", toResult(vulnerabilities[REENTRANCY]));
-  root.put("integer overflow", toResult(vulnerabilities[OVERFLOW]));
+  root.put("integer overflow", toResult(vulnerabilities[INT_OVERFLOW]));
   root.put("timestamp dependency", toResult(vulnerabilities[TIME_DEPENDENCY]));
-  root.put("integer underflow", toResult(vulnerabilities[UNDERFLOW]));
+  root.put("integer underflow", toResult(vulnerabilities[INT_UNDERFLOW]));
   root.put("block number dependency", toResult(vulnerabilities[NUMBER_DEPENDENCY]));
   pt::write_json(ss, root);
   stats << ss.str() << endl;
