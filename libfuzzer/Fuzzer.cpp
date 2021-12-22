@@ -131,6 +131,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
 
 void Fuzzer::writeStats(const Mutation &mutation) {
   auto contract = mainContract();
+  auto toResult = [](bool val) { return val ? "found" : "none"; };
   stringstream ss;
   pt::ptree root;
   ofstream stats(contract.contractName + "/stats.json");
@@ -139,6 +140,15 @@ void Fuzzer::writeStats(const Mutation &mutation) {
   root.put("speed", (double) fuzzStat.totalExecs / timer.elapsed());
   root.put("queueCycles", fuzzStat.queueCycle);
   root.put("uniqExceptions", uniqExceptions.size());
+  root.put("gasless send", toResult(vulnerabilities[GASLESS_SEND]);
+  root.put("dangerous delegatecall", toResult(vulnerabilities[DELEGATE_CALL]));
+  root.put("exception disorder", toResult(vulnerabilities[EXCEPTION_DISORDER]));
+  root.put("freezing ether", toResult(vulnerabilities[FREEZING]));
+  root.put("reentrancy", toResult(vulnerabilities[REENTRANCY]));
+  root.put("integer overflow", toResult(vulnerabilities[OVERFLOW]));
+  root.put("timestamp dependency", toResult(vulnerabilities[TIME_DEPENDENCY]));
+  root.put("integer underflow", toResult(vulnerabilities[UNDERFLOW]));
+  root.put("block number dependency", toResult(vulnerabilities[NUMBER_DEPENDENCY]));
   pt::write_json(ss, root);
   stats << ss.str() << endl;
   stats.close();
