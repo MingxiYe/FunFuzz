@@ -43,9 +43,10 @@ namespace fuzzer {
   struct FuncDef {
     string name;
     bool payable;
+    bool isCritical = false;
     vector<TypeDef> tds;
     FuncDef(){};
-    FuncDef(string name, vector<TypeDef> tds, bool payable);
+    FuncDef(string name, vector<TypeDef> tds, bool payable, bool isCritical = false);
   };
   
   class ContractABI {

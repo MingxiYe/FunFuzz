@@ -5,10 +5,11 @@ using namespace std;
 namespace pt = boost::property_tree;
 
 namespace fuzzer {
-  FuncDef::FuncDef(string name, vector<TypeDef> tds, bool payable) {
+  FuncDef::FuncDef(string name, vector<TypeDef> tds, bool payable, bool isCritical) {
     this->name = name;
     this->tds = tds;
     this->payable = payable;
+    this->isCritical = isCritical;
   }
   
   FakeBlock ContractABI::decodeBlock() {
