@@ -123,6 +123,7 @@ add_subdirectory(libwebthree)
 add_subdirectory(libweb3jsonrpc)
 add_subdirectory(libfuzzer)
 add_subdirectory(liboracle)
+add_subdirectory(libcfg)
 add_subdirectory(testfuzzer)
 
 add_subdirectory(aleth)
