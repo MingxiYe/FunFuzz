@@ -175,4 +175,114 @@ namespace fuzzer {
     for (auto t : tracebits) cksum = cksum + t;
     return TargetContainerResult(tracebits, predicates, uniqExceptions, cksum);
   }
+
+  TargetContainerResult TargetExecutive::execFunc(bytes data, const string funcName, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>>& validJumpis){
+    /* Save all hit branches to trace_bits */
+    Instruction prevInst;
+    RecordParam recordParam;
+    u256 lastCompValue = 0;
+    u64 jumpDest1 = 0;
+    u64 jumpDest2 = 0;
+    unordered_set<string> uniqExceptions;
+    unordered_set<string> tracebits;
+    unordered_map<string, u256> predicates;
+    vector<bytes> outputs;
+    size_t savepoint = program->savepoint();
+    OnOpFunc onOp = [&](u64, u64 pc, Instruction inst, bigint, bigint, bigint, VMFace const* _vm, ExtVMFace const* ext) {
+      auto vm = dynamic_cast<LegacyVM const*>(_vm);
+      /* Mutation analyzes data */
+      switch (inst) {
+        case Instruction::GT:
+        case Instruction::SGT:
+        case Instruction::LT:
+        case Instruction::SLT:
+        case Instruction::EQ: {
+          vector<u256>::size_type stackSize = vm->stack().size();
+          if (stackSize >= 2) {
+            u256 left = vm->stack()[stackSize - 1];
+            u256 right = vm->stack()[stackSize - 2];
+            /* calculate if command inside a function */
+            u256 temp = left > right ? left - right : right - left;
+            lastCompValue = temp + 1;
+          }
+          break;
+        }
+        default: { break; }
+      }
+      /* Calculate left and right branches for valid jumpis*/
+      auto recordable = recordParam.isDeployment && get<0>(validJumpis).count(pc);
+      recordable = recordable || !recordParam.isDeployment && get<1>(validJumpis).count(pc);
+      if (inst == Instruction::JUMPCI && recordable) {
+        jumpDest1 = (u64) vm->stack().back();
+        jumpDest2 = pc + 1;
+      }
+      /* Calculate actual jumpdest and add reverse branch to predicate */
+      recordable = recordParam.isDeployment && get<0>(validJumpis).count(recordParam.lastpc);
+      recordable = recordable || !recordParam.isDeployment && get<1>(validJumpis).count(recordParam.lastpc);
+      if (prevInst == Instruction::JUMPCI && recordable) {
+        auto branchId = to_string(recordParam.lastpc) + ":" + to_string(pc);
+        tracebits.insert(branchId);
+        /* Calculate branch distance */
+        u64 jumpDest = pc == jumpDest1 ? jumpDest2 : jumpDest1;
+        branchId = to_string(recordParam.lastpc) + ":" + to_string(jumpDest);
+        predicates[branchId] = lastCompValue;
+      }
+      prevInst = inst;
+      recordParam.lastpc = pc;
+    };
+    /* Decode and call functions */
+    ca.updateTestData(data);
+    vector<bytes> funcs = ca.encodeFunctions();
+    program->deploy(addr, code);
+    program->setBalance(addr, DEFAULT_BALANCE);
+    program->updateEnv(ca.decodeAccounts(), ca.decodeBlock());
+    /* Record all JUMPI in constructor */
+    recordParam.isDeployment = true;
+    auto sender = ca.getSender();
+    OpcodePayload payload;
+    payload.inst = Instruction::CALL;
+    payload.data = ca.encodeConstructor();
+    payload.wei = ca.isPayable("") ? program->getBalance(sender) / 2 : 0;
+    payload.caller = sender;
+    payload.callee = addr;
+    oracleFactory->save(OpcodeContext(0, payload));
+    auto res = program->invoke(addr, CONTRACT_CONSTRUCTOR, ca.encodeConstructor(), ca.isPayable(""), onOp);
+    if (res.excepted != TransactionException::None) {
+      auto exceptionId = to_string(recordParam.lastpc);
+      uniqExceptions.insert(exceptionId) ;
+      /* Save Call Log */
+      OpcodePayload payload;
+      payload.inst = Instruction::INVALID;
+      oracleFactory->save(OpcodeContext(0, payload));
+    }
+    for (uint32_t funcIdx = 0; funcIdx < funcs.size(); funcIdx ++ ) {
+      /* Update payload */
+      auto func = funcs[funcIdx];
+      auto fd = ca.fds[funcIdx];
+      if(fd.name != funcName) continue;
+      /* Ignore JUMPI until program reaches inside function */
+      recordParam.isDeployment = false;
+      OpcodePayload payload;
+      payload.data = func;
+      payload.inst = Instruction::CALL;
+      payload.wei = ca.isPayable(fd.name) ? program->getBalance(sender) / 2 : 0;
+      payload.caller = sender;
+      payload.callee = addr;
+      oracleFactory->save(OpcodeContext(0, payload));
+      res = program->invoke(addr, CONTRACT_FUNCTION, func, ca.isPayable(fd.name), onOp);
+      outputs.push_back(res.output);
+      if (res.excepted != TransactionException::None) {
+        auto exceptionId = to_string(recordParam.lastpc);
+        uniqExceptions.insert(exceptionId);
+        /* Save Call Log */
+        OpcodePayload payload;
+        payload.inst = Instruction::INVALID;
+      }
+    }
+    /* Reset data before running new contract */
+    program->rollback(savepoint);
+    string cksum = "";
+    for (auto t : tracebits) cksum = cksum + t;
+    return TargetContainerResult(tracebits, predicates, uniqExceptions, cksum);
+  }
 }
