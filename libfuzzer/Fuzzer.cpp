@@ -13,9 +13,15 @@ using namespace std;
 using namespace fuzzer;
 namespace pt = boost::property_tree;
 
-/* Setup virgin byte to 255 */
+/* 
+  Setup virgin byte to 255 
+  initialize fuzzedContract
+*/
 Fuzzer::Fuzzer(FuzzParam fuzzParam): fuzzParam(fuzzParam){
   fill_n(fuzzStat.stageFinds, 32, 0);
+  for(auto contractInfo : fuzzParam.contractInfo)
+    if(contractInfo.isMain)
+      fuzzedContract = new Contract(contractInfo.contractName, contractInfo.bin);
 }
 
 /* Detect new exception */
@@ -152,6 +158,68 @@ void Fuzzer::writeStats(const Mutation &mutation) {
   pt::write_json(ss, root);
   stats << ss.str() << endl;
   stats.close();
+}
+
+/* determine which function is critical in ContractABI */
+void Fuzzer::determineCriticism(){
+  vector<BasicBlock*> basicBlocks = fuzzedContract->getRuntimeCfg()->getBasicBlocksForIteration();
+  ContractABI mainCA(mainContract().abiJson);
+  for(auto fd : mainCA.fds){
+    Logger::debug("Generate test case for " + fd.name);
+    Logger::debug("---------------------------------");
+    /* set up environment to execute item */
+    TargetContainer container;
+    bytes revisedData = ContractABI::postprocessTestData(mainCA.randomTestcase());
+    FuzzItem item(revisedData);
+    // string attackerName = fuzzParam.attackerName;
+    // auto attackerContractInfoIter = find_if(fuzzParam.contractInfo.begin(), fuzzParam.contractInfo.end(), [=](const ContractInfo &s){ return s.contractName.find(attackerName) != string::npos; });
+    // ContractABI caAttacker((*attackerContractInfoIter).abiJson);
+    auto executive = container.loadContract(fromHex(mainContract().bin), mainCA);
+    // executive.deploy(ContractABI::postprocessTestData(caAttacker.randomTestcase()), EMPTY_ONOP);
+    string contractName = mainContract().contractName;
+    auto bytecodeBranch = BytecodeBranch(mainContract());
+    auto validJumpis = bytecodeBranch.findValidJumpis();
+    item.res = executive.execFunc(revisedData, fd.name, validJumpis);
+    // Logger::debug("the size of destination is " + to_string(item.res.tracebits.size()));
+    // Logger::debug("the size of destination is " + to_string(item.res.predicates.size()));
+    vector<long> destination;
+    vector<long> visited;
+    for(auto tracebit : item.res.tracebits)
+      destination.push_back(stol(tracebit.substr(tracebit.find(":") + 1)));
+    for(auto predicate : item.res.predicates)
+      destination.push_back(stol(predicate.first.substr(predicate.first.find(":") + 1)));
+    /* calculate if fd is critical */
+    Logger::debug("the size of destination is " + to_string(destination.size()));
+    while(destination.size()){
+      long dest = destination.back();
+      destination.pop_back();
+      auto visitedIter = find_if(visited.begin(), visited.end(), [=](const long &s){return s == dest;});
+      if(visitedIter != visited.end()) continue;
+      visited.push_back(dest);
+      auto basicBlockIter = find_if(basicBlocks.begin(), basicBlocks.end(), [=](const BasicBlock* s){ return s->getOffset() == dest;});
+      if(basicBlockIter == basicBlocks.end()){
+        Logger::debug("Unable to find basicblock with offset: " + to_string(dest));
+        continue;
+      }
+      Logger::debug("Find basicblock with offset: " + to_string(dest));
+      Logger::debug("--------------------------------------------");
+      /* if find critical opcodes */
+      vector<Opcode*> opcodes = (*basicBlockIter)->getOpcodes();
+      Logger::debug((*basicBlockIter)->toString());
+      Logger::debug("--------------------------------------------");
+      auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){return s->getOpcodeID() == OpcodeID::CALL || s->getOpcodeID() == OpcodeID::DELEGATECALL ||s->getOpcodeID() == OpcodeID::TIMESTAMP ||s->getOpcodeID() == OpcodeID::NUMBER ||s->getOpcodeID() == OpcodeID::INVALID;});
+      if(opcodeIter != opcodes.end()){
+        fd.isCritical = true;
+        Logger::debug("Find critical function: " + fd.name);
+        break;
+      }
+      for(auto successor : (*basicBlockIter)->getSuccessors())
+        destination.push_back(successor->getOffset());
+    }
+    Logger::debug("END CURRENT FUNCTION: " + fd.name);
+    Logger::debug("---------------------------------");
+  }
+
 }
 
 /* Save data if interest */

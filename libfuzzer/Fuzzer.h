@@ -6,6 +6,7 @@
 #include "Util.h"
 #include "FuzzItem.h"
 #include "Mutation.h"
+#include "../libcfg/CFG/contract/Contract.h"
 
 using namespace dev;
 using namespace eth;
@@ -62,6 +63,7 @@ namespace fuzzer {
     FuzzStat fuzzStat;
     void writeStats(const Mutation &mutation);
     ContractInfo mainContract();
+    Contract* fuzzedContract;
     public:
       Fuzzer(FuzzParam fuzzParam);
       FuzzItem saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>> &validJumpis);
@@ -69,6 +71,7 @@ namespace fuzzer {
       void updateTracebits(unordered_set<string> tracebits);
       void updatePredicates(unordered_map<string, u256> predicates);
       void updateExceptions(unordered_set<string> uniqExceptions);
+      void determineCriticism();
       void start();
       void stop();
   };
