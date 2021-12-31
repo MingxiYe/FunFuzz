@@ -71,7 +71,7 @@ namespace fuzzer {
       void updateTracebits(unordered_set<string> tracebits);
       void updatePredicates(unordered_map<string, u256> predicates);
       void updateExceptions(unordered_set<string> uniqExceptions);
-      void determineCriticism();
+      void determineCriticism(ContractABI* mainCA);
       void start();
       void stop();
   };

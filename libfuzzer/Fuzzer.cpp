@@ -161,27 +161,20 @@ void Fuzzer::writeStats(const Mutation &mutation) {
 }
 
 /* determine which function is critical in ContractABI */
-void Fuzzer::determineCriticism(){
+void Fuzzer::determineCriticism(ContractABI* mainCA){
   vector<BasicBlock*> basicBlocks = fuzzedContract->getRuntimeCfg()->getBasicBlocksForIteration();
-  ContractABI mainCA(mainContract().abiJson);
-  for(auto fd : mainCA.fds){
-    Logger::debug("Generate test case for " + fd.name);
+  for(vector<FuncDef>::iterator fdIter = mainCA->fds.begin(); fdIter != mainCA->fds.end(); ++fdIter){
+    Logger::debug("Generate test case for " + fdIter->name);
     Logger::debug("---------------------------------");
     /* set up environment to execute item */
     TargetContainer container;
-    bytes revisedData = ContractABI::postprocessTestData(mainCA.randomTestcase());
+    bytes revisedData = ContractABI::postprocessTestData(mainCA->randomTestcase());
     FuzzItem item(revisedData);
-    // string attackerName = fuzzParam.attackerName;
-    // auto attackerContractInfoIter = find_if(fuzzParam.contractInfo.begin(), fuzzParam.contractInfo.end(), [=](const ContractInfo &s){ return s.contractName.find(attackerName) != string::npos; });
-    // ContractABI caAttacker((*attackerContractInfoIter).abiJson);
-    auto executive = container.loadContract(fromHex(mainContract().bin), mainCA);
-    // executive.deploy(ContractABI::postprocessTestData(caAttacker.randomTestcase()), EMPTY_ONOP);
+    auto executive = container.loadContract(fromHex(mainContract().bin), *mainCA);
     string contractName = mainContract().contractName;
     auto bytecodeBranch = BytecodeBranch(mainContract());
     auto validJumpis = bytecodeBranch.findValidJumpis();
-    item.res = executive.execFunc(revisedData, fd.name, validJumpis);
-    // Logger::debug("the size of destination is " + to_string(item.res.tracebits.size()));
-    // Logger::debug("the size of destination is " + to_string(item.res.predicates.size()));
+    item.res = executive.execFunc(revisedData, fdIter->name, validJumpis);
     vector<long> destination;
     vector<long> visited;
     for(auto tracebit : item.res.tracebits)
@@ -209,17 +202,16 @@ void Fuzzer::determineCriticism(){
       Logger::debug("--------------------------------------------");
       auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){return s->getOpcodeID() == OpcodeID::CALL || s->getOpcodeID() == OpcodeID::DELEGATECALL ||s->getOpcodeID() == OpcodeID::TIMESTAMP ||s->getOpcodeID() == OpcodeID::NUMBER ||s->getOpcodeID() == OpcodeID::INVALID;});
       if(opcodeIter != opcodes.end()){
-        fd.isCritical = true;
-        Logger::debug("Find critical function: " + fd.name);
+        fdIter->isCritical = true;
+        Logger::debug("Find critical function: " + fdIter->name);
         break;
       }
       for(auto successor : (*basicBlockIter)->getSuccessors())
         destination.push_back(successor->getOffset());
     }
-    Logger::debug("END CURRENT FUNCTION: " + fd.name);
+    Logger::debug("END CURRENT FUNCTION: " + fdIter->name);
     Logger::debug("---------------------------------");
   }
-
 }
 
 /* Save data if interest */
