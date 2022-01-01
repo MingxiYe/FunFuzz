@@ -42,7 +42,9 @@ ContractInfo parseJson(string jsonFile, string contractName, bool isMain) {
   contractInfo.isMain = isMain;
   contractInfo.abiJson = root.get<string>(abiPath);
   contractInfo.bin = root.get<string>(binPath);
+  contractInfo.bin = boost::regex_replace(contractInfo.bin, boost::regex("__.*contracts/.*__"), "0000000000000000000000000000000000000000");
   contractInfo.binRuntime = root.get<string>(binRuntimePath);
+  contractInfo.binRuntime = boost::regex_replace(contractInfo.binRuntime, boost::regex("__.*contracts/.*__"), "0000000000000000000000000000000000000000");
   contractInfo.srcmap = root.get<string>(srcmapPath);
   contractInfo.srcmapRuntime = root.get<string>(srcmapRuntimePath);
   contractInfo.contractName = fullContractName;
