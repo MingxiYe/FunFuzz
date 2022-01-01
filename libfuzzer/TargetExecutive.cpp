@@ -22,7 +22,7 @@ namespace fuzzer {
     unordered_map<string, u256> predicates;
     vector<bytes> outputs;
     size_t savepoint = program->savepoint();
-    OnOpFunc onOp = [&](u64, u64 pc, Instruction inst, bigint, bigint, bigint, VMFace const* _vm, ExtVMFace const* ext) {
+    OnOpFunc onOpCritial = [&](u64, u64 pc, Instruction inst, bigint, bigint, bigint, VMFace const* _vm, ExtVMFace const* ext) {
       auto vm = dynamic_cast<LegacyVM const*>(_vm);
       /* Oracle analyze data */
       switch (inst) {
@@ -117,6 +117,64 @@ namespace fuzzer {
       prevInst = inst;
       recordParam.lastpc = pc;
     };
+    OnOpFunc onOpNormal = [&](u64, u64 pc, Instruction inst, bigint, bigint, bigint, VMFace const* _vm, ExtVMFace const* ext) {
+      auto vm = dynamic_cast<LegacyVM const*>(_vm);
+      /* Oracle analyze data */
+      switch (inst) {
+        case Instruction::CALL:
+        case Instruction::CALLCODE:
+        case Instruction::DELEGATECALL:
+        case Instruction::STATICCALL: {
+          vector<u256>::size_type stackSize = vm->stack().size();
+          u256 wei = (inst == Instruction::CALL || inst == Instruction::CALLCODE) ? vm->stack()[stackSize - 3] : 0;
+          auto sizeOffset = (inst == Instruction::CALL || inst == Instruction::CALLCODE) ? (stackSize - 4) : (stackSize - 3);
+          auto inOff = (uint64_t) vm->stack()[sizeOffset];
+          auto inSize = (uint64_t) vm->stack()[sizeOffset - 1];
+          auto first = vm->memory().begin();
+          OpcodePayload payload;
+          payload.caller = ext->myAddress;
+          payload.callee = Address((u160)vm->stack()[stackSize - 2]);
+          payload.pc = pc;
+          payload.gas = vm->stack()[stackSize - 1];
+          payload.wei = wei;
+          payload.inst = inst;
+          payload.data = bytes(first + inOff, first + inOff + inSize);
+          oracleFactory->save(OpcodeContext(ext->depth + 1, payload));
+          break;
+        }
+        default: {
+          OpcodePayload payload;
+          payload.pc = pc;
+          payload.inst = inst;
+          if (
+              inst == Instruction::SUICIDE ||
+              inst == Instruction::NUMBER ||
+              inst == Instruction::TIMESTAMP ||
+              inst == Instruction::INVALID ||
+              inst == Instruction::ADD ||
+              inst == Instruction::SUB
+              ) {
+            vector<u256>::size_type stackSize = vm->stack().size();
+            if (inst == Instruction::ADD || inst == Instruction::SUB) {
+              auto left = vm->stack()[stackSize - 1];
+              auto right = vm->stack()[stackSize - 2];
+              if (inst == Instruction::ADD) {
+                auto total256 = left + right;
+                auto total512 = (u512) left + (u512) right;
+                payload.isOverflow = total512 != total256;
+              }
+              if (inst == Instruction::SUB) {
+                payload.isUnderflow = left < right;
+              }
+            }
+            oracleFactory->save(OpcodeContext(ext->depth + 1, payload));
+          }
+          break;
+        }
+      }
+      prevInst = inst;
+      recordParam.lastpc = pc;
+    };
     /* Decode and call functions */
     ca.updateTestData(data);
     vector<bytes> funcs = ca.encodeFunctions();
@@ -134,7 +192,7 @@ namespace fuzzer {
     payload.caller = sender;
     payload.callee = addr;
     oracleFactory->save(OpcodeContext(0, payload));
-    auto res = program->invoke(addr, CONTRACT_CONSTRUCTOR, ca.encodeConstructor(), ca.isPayable(""), onOp);
+    auto res = program->invoke(addr, CONTRACT_CONSTRUCTOR, ca.encodeConstructor(), ca.isPayable(""), onOpNormal);
     if (res.excepted != TransactionException::None) {
       auto exceptionId = to_string(recordParam.lastpc);
       uniqExceptions.insert(exceptionId) ;
@@ -157,7 +215,10 @@ namespace fuzzer {
       payload.caller = sender;
       payload.callee = addr;
       oracleFactory->save(OpcodeContext(0, payload));
-      res = program->invoke(addr, CONTRACT_FUNCTION, func, ca.isPayable(fd.name), onOp);
+      if(!fd.isCritical)
+        res = program->invoke(addr, CONTRACT_FUNCTION, func, ca.isPayable(fd.name), onOpNormal);
+      else
+        res = program->invoke(addr, CONTRACT_FUNCTION, func, ca.isPayable(fd.name), onOpCritial);
       outputs.push_back(res.output);
       if (res.excepted != TransactionException::None) {
         auto exceptionId = to_string(recordParam.lastpc);
@@ -245,16 +306,7 @@ namespace fuzzer {
     payload.wei = ca.isPayable("") ? program->getBalance(sender) / 2 : 0;
     payload.caller = sender;
     payload.callee = addr;
-    oracleFactory->save(OpcodeContext(0, payload));
     auto res = program->invoke(addr, CONTRACT_CONSTRUCTOR, ca.encodeConstructor(), ca.isPayable(""), onOp);
-    if (res.excepted != TransactionException::None) {
-      auto exceptionId = to_string(recordParam.lastpc);
-      uniqExceptions.insert(exceptionId) ;
-      /* Save Call Log */
-      OpcodePayload payload;
-      payload.inst = Instruction::INVALID;
-      oracleFactory->save(OpcodeContext(0, payload));
-    }
     for (uint32_t funcIdx = 0; funcIdx < funcs.size(); funcIdx ++ ) {
       /* Update payload */
       auto func = funcs[funcIdx];
@@ -271,13 +323,6 @@ namespace fuzzer {
       oracleFactory->save(OpcodeContext(0, payload));
       res = program->invoke(addr, CONTRACT_FUNCTION, func, ca.isPayable(fd.name), onOp);
       outputs.push_back(res.output);
-      if (res.excepted != TransactionException::None) {
-        auto exceptionId = to_string(recordParam.lastpc);
-        uniqExceptions.insert(exceptionId);
-        /* Save Call Log */
-        OpcodePayload payload;
-        payload.inst = Instruction::INVALID;
-      }
     }
     /* Reset data before running new contract */
     program->rollback(savepoint);

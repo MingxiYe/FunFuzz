@@ -164,8 +164,8 @@ void Fuzzer::writeStats(const Mutation &mutation) {
 void Fuzzer::determineCriticism(ContractABI* mainCA){
   vector<BasicBlock*> basicBlocks = fuzzedContract->getRuntimeCfg()->getBasicBlocksForIteration();
   for(vector<FuncDef>::iterator fdIter = mainCA->fds.begin(); fdIter != mainCA->fds.end(); ++fdIter){
-    Logger::debug("Generate test case for " + fdIter->name);
     Logger::debug("---------------------------------");
+    Logger::debug("Generate test case for " + fdIter->name);
     /* set up environment to execute item */
     TargetContainer container;
     bytes revisedData = ContractABI::postprocessTestData(mainCA->randomTestcase());
@@ -182,7 +182,6 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
     for(auto predicate : item.res.predicates)
       destination.push_back(stol(predicate.first.substr(predicate.first.find(":") + 1)));
     /* calculate if fd is critical */
-    Logger::debug("the size of destination is " + to_string(destination.size()));
     while(destination.size()){
       long dest = destination.back();
       destination.pop_back();
@@ -195,11 +194,9 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
         continue;
       }
       Logger::debug("Find basicblock with offset: " + to_string(dest));
-      Logger::debug("--------------------------------------------");
       /* if find critical opcodes */
       vector<Opcode*> opcodes = (*basicBlockIter)->getOpcodes();
       Logger::debug((*basicBlockIter)->toString());
-      Logger::debug("--------------------------------------------");
       auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){return s->getOpcodeID() == OpcodeID::CALL || s->getOpcodeID() == OpcodeID::DELEGATECALL ||s->getOpcodeID() == OpcodeID::TIMESTAMP ||s->getOpcodeID() == OpcodeID::NUMBER ||s->getOpcodeID() == OpcodeID::INVALID;});
       if(opcodeIter != opcodes.end()){
         fdIter->isCritical = true;
@@ -321,6 +318,7 @@ void Fuzzer::start() {
     auto isAttacker = contractInfo.contractName.find(fuzzParam.attackerName) != string::npos;
     if (!contractInfo.isMain && !isAttacker) continue;
     ContractABI ca(contractInfo.abiJson);
+    determineCriticism(&ca);
     auto bin = fromHex(contractInfo.bin);
     auto binRuntime = fromHex(contractInfo.binRuntime);
     // Accept only valid jumpis
