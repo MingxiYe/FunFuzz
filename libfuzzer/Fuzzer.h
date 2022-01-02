@@ -61,7 +61,7 @@ namespace fuzzer {
     Timer timer;
     FuzzParam fuzzParam;
     FuzzStat fuzzStat;
-    void writeStats(const Mutation &mutation);
+    void writeStats(const Mutation &mutation, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>> &validJumpis);
     ContractInfo mainContract();
     Contract* fuzzedContract;
     public:

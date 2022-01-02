@@ -77,6 +77,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   auto cycleDone = padStr(to_string(fuzzStat.queueCycle), 15);
   auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
   auto numBranches = padStr(to_string(totalBranches), 15);
+  auto partialCoverage = to_string((uint64_t)((float) tracebits.size() / (float) (predicates.size() + tracebits.size()) * 100)) + "%";
   auto coverage = padStr(to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%", 15);
   auto flip1 = to_string(fuzzStat.stageFinds[STAGE_FLIP1]) + "/" + to_string(mutation.stageCycles[STAGE_FLIP1]);
   auto flip2 = to_string(fuzzStat.stageFinds[STAGE_FLIP2]) + "/" + to_string(mutation.stageCycles[STAGE_FLIP2]);
@@ -116,8 +117,8 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bLTR bV5 cGRN " stage progress " cRST bV5 bV10 bV2 bV bTTR bV2 cGRN " overall results " cRST bV2 bV5 bV2 bV2 bV bRTR "\n");
   printf(bH "  now trying : %s" bH " cycles done : %s" bH "\n", nowTrying.c_str(), cycleDone.c_str());
   printf(bH " stage execs : %s" bH "    branches : %s" bH "\n", stageExec.c_str(), numBranches.c_str());
-  printf(bH " total execs : %s" bH "    coverage : %s" bH "\n", allExecs.c_str(), coverage.c_str());
-  printf(bH "  exec speed : %s" bH "               %s" bH "\n", execSpeed.c_str(), padStr("", 15).c_str());
+  printf(bH " total execs : %s" bH "   Tcoverage : %s" bH "\n", allExecs.c_str(), coverage.c_str());
+  printf(bH "  exec speed : %s" bH "   Pcoverage : %s" bH "\n", execSpeed.c_str(), partialCoverage.c_str());
   printf(bH "  cycle prog : %s" bH "               %s" bH "\n", cycleProgress.c_str(), padStr("", 15).c_str());
   printf(bLTR bV5 cGRN " fuzzing yields " cRST bV5 bV5 bV5 bV2 bV bBTR bV10 bV bTTR bV cGRN " path geometry " cRST bV2 bV2 bRTR "\n");
   printf(bH "   bit flips : %s" bH "     pending : %s" bH "\n", bitflip.c_str(), pending.c_str());
@@ -135,17 +136,23 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bBL bV20 bV2 bV10 bV5 bV2 bV bBTR bV10 bV5 bV20 bV2 bV2 bBR "\n");
 }
 
-void Fuzzer::writeStats(const Mutation &mutation) {
+void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>> &validJumpis) {
   auto contract = mainContract();
   auto toResult = [](bool val) { return val ? "found" : "none"; };
   stringstream ss;
   pt::ptree root;
-  ofstream stats(contract.contractName + "/stats.json");
+  int count = timer.elapsed();
+  auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
+  string totalCoverage = to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%";
+  auto partialCoverage = to_string((uint64_t)((float) tracebits.size() / (float) (predicates.size() + tracebits.size()) * 100)) + "%";
+  ofstream stats(contract.contractName + "/stats" + to_string(count) + ".json");
   root.put("duration", timer.elapsed());
   root.put("totalExecs", fuzzStat.totalExecs);
   root.put("speed", (double) fuzzStat.totalExecs / timer.elapsed());
   root.put("queueCycles", fuzzStat.queueCycle);
   root.put("uniqExceptions", uniqExceptions.size());
+  root.put("total coverage", totalCoverage);
+  root.put("partial coverage", partialCoverage);
   root.put("gasless send", toResult(vulnerabilities[GASLESS_SEND]));
   root.put("dangerous delegatecall", toResult(vulnerabilities[DELEGATE_CALL]));
   root.put("exception disorder", toResult(vulnerabilities[EXCEPTION_DISORDER]));
@@ -361,12 +368,12 @@ void Fuzzer::start() {
             break;
           }
           case JSON: {
-            writeStats(mutation);
+            writeStats(mutation, validJumpis);
             break;
           }
           case BOTH: {
             showStats(mutation, validJumpis);
-            writeStats(mutation);
+            writeStats(mutation, validJumpis);
             break;
           }
         }
@@ -400,12 +407,12 @@ void Fuzzer::start() {
                 break;
               }
               case JSON: {
-                writeStats(mutation);
+                writeStats(mutation, validJumpis);
                 break;
               }
               case BOTH: {
                 showStats(mutation, validJumpis);
-                writeStats(mutation);
+                writeStats(mutation, validJumpis);
                 break;
               }
             }
@@ -420,12 +427,12 @@ void Fuzzer::start() {
                 break;
               }
               case JSON: {
-                writeStats(mutation);
+                writeStats(mutation, validJumpis);
                 break;
               }
               case BOTH: {
                 showStats(mutation, validJumpis);
-                writeStats(mutation);
+                writeStats(mutation, validJumpis);
                 break;
               }
             }
