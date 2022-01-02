@@ -5,7 +5,7 @@ using namespace std;
 namespace fuzzer {
   ofstream Logger::debugFile = ofstream("debug.txt", ios_base::app);
   ofstream Logger::infoFile = ofstream("info.txt", ios_base::app);
-  bool Logger::enabled = true;
+  bool Logger::enabled = false;
 
   void Logger::debug(string str) {
     if (enabled) {
