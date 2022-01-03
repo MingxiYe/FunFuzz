@@ -48,6 +48,25 @@ void Fuzzer::updatePredicates(unordered_map<string, u256> _pred) {
   }
 }
 
+/* Detect new bits by comparing tracebits to virginbits */
+void Fuzzer::updateCriticalTracebits(unordered_set<string> _tracebits) {
+  for (auto it: _tracebits) criticalTracebits.insert(it);
+}
+
+void Fuzzer::updateCriticalPredicates(unordered_map<string, u256> _pred) {
+  for (auto it : _pred) {
+    criticalPredicates.insert(it.first);
+  };
+  // Remove covered predicates
+  for(auto it = criticalPredicates.begin(); it != criticalPredicates.end(); ) {
+    if (criticalTracebits.count(*it)) {
+      it = criticalPredicates.erase(it);
+    } else {
+      ++it;
+    }
+  }
+}
+
 ContractInfo Fuzzer::mainContract() {
   auto contractInfo = fuzzParam.contractInfo;
   auto first = contractInfo.begin();
@@ -77,7 +96,8 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   auto cycleDone = padStr(to_string(fuzzStat.queueCycle), 15);
   auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
   auto numBranches = padStr(to_string(totalBranches), 15);
-  auto partialCoverage = to_string((uint64_t)((float) tracebits.size() / (float) (predicates.size() + tracebits.size()) * 100)) + "%";
+  auto partialCoverage = padStr(to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%", 15);
+  auto pTCoverage = padStr(to_string((uint64_t)((float) criticalTracebits.size() / (float) totalBranches * 100)) + "%", 15);
   auto coverage = padStr(to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%", 15);
   auto flip1 = to_string(fuzzStat.stageFinds[STAGE_FLIP1]) + "/" + to_string(mutation.stageCycles[STAGE_FLIP1]);
   auto flip2 = to_string(fuzzStat.stageFinds[STAGE_FLIP2]) + "/" + to_string(mutation.stageCycles[STAGE_FLIP2]);
@@ -119,7 +139,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bH " stage execs : %s" bH "    branches : %s" bH "\n", stageExec.c_str(), numBranches.c_str());
   printf(bH " total execs : %s" bH "   Tcoverage : %s" bH "\n", allExecs.c_str(), coverage.c_str());
   printf(bH "  exec speed : %s" bH "   Pcoverage : %s" bH "\n", execSpeed.c_str(), partialCoverage.c_str());
-  printf(bH "  cycle prog : %s" bH "               %s" bH "\n", cycleProgress.c_str(), padStr("", 15).c_str());
+  printf(bH "  cycle prog : %s" bH "  PTcoverage : %s" bH "\n", cycleProgress.c_str(), pTCoverage.c_str());
   printf(bLTR bV5 cGRN " fuzzing yields " cRST bV5 bV5 bV5 bV2 bV bBTR bV10 bV bTTR bV cGRN " path geometry " cRST bV2 bV2 bRTR "\n");
   printf(bH "   bit flips : %s" bH "     pending : %s" bH "\n", bitflip.c_str(), pending.c_str());
   printf(bH "  byte flips : %s" bH " pending fav : %s" bH "\n", byteflip.c_str(), pendingFav.c_str());
@@ -143,8 +163,9 @@ void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint
   pt::ptree root;
   int count = timer.elapsed();
   auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
-  string totalCoverage = to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%";
-  auto partialCoverage = to_string((uint64_t)((float) tracebits.size() / (float) (predicates.size() + tracebits.size()) * 100)) + "%";
+  auto totalCoverage = to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%";
+  auto partialCoverage = to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%";
+  auto pTCoverage = to_string((uint64_t)((float) criticalTracebits.size() / (float) totalBranches * 100)) + "%";
   ofstream stats(contract.contractName + "/stats" + to_string(count) + ".json");
   root.put("duration", timer.elapsed());
   root.put("totalExecs", fuzzStat.totalExecs);
@@ -153,6 +174,7 @@ void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint
   root.put("uniqExceptions", uniqExceptions.size());
   root.put("total coverage", totalCoverage);
   root.put("partial coverage", partialCoverage);
+  root.put("pTCoverage", pTCoverage);
   root.put("gasless send", toResult(vulnerabilities[GASLESS_SEND]));
   root.put("dangerous delegatecall", toResult(vulnerabilities[DELEGATE_CALL]));
   root.put("exception disorder", toResult(vulnerabilities[EXCEPTION_DISORDER]));
@@ -225,8 +247,8 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
   item.res = te.exec(revisedData, validJumpis);
   //Logger::debug(Logger::testFormat(item.data));
   fuzzStat.totalExecs ++;
-  for (auto tracebit: item.res.tracebits) {
-    if (!tracebits.count(tracebit)) {
+  for (auto tracebit: item.res.criticalTracebits) {
+    if (!criticalTracebits.count(tracebit)) {
       // Remove leader
       auto lIt = find_if(leaders.begin(), leaders.end(), [=](const pair<string, Leader>& p) { return p.first == tracebit;});
       if (lIt != leaders.end()) leaders.erase(lIt);
@@ -242,7 +264,7 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
       Logger::debug(Logger::testFormat(item.data));
     }
   }
-  for (auto predicateIt: item.res.predicates) {
+  for (auto predicateIt: item.res.criticalPredicates) {
     auto lIt = find_if(leaders.begin(), leaders.end(), [=](const pair<string, Leader>& p) { return p.first == predicateIt.first;});
     if (
         lIt != leaders.end() // Found Leader
@@ -259,7 +281,7 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
       auto leader = Leader(item, predicateIt.second);
       leaders.insert(make_pair(predicateIt.first, leader)); // Insert leader
       if (depth + 1 > fuzzStat.maxdepth) fuzzStat.maxdepth = depth + 1;
-      fuzzStat.lastNewPath = timer.elapsed();
+      // fuzzStat.lastNewPath = timer.elapsed();
       Logger::debug(Logger::testFormat(item.data));
     } else if (lIt == leaders.end()) {
       auto leader = Leader(item, predicateIt.second);
@@ -277,6 +299,8 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
   updateExceptions(item.res.uniqExceptions);
   updateTracebits(item.res.tracebits);
   updatePredicates(item.res.predicates);
+  updateCriticalTracebits(item.res.criticalTracebits);
+  updateCriticalPredicates(item.res.criticalPredicates);
   return item;
 }
 

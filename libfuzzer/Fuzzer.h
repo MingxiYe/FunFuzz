@@ -55,6 +55,8 @@ namespace fuzzer {
     vector<string> queues;
     unordered_set<string> tracebits;
     unordered_set<string> predicates;
+    unordered_set<string> criticalTracebits;
+    unordered_set<string> criticalPredicates;
     unordered_map<string, Leader> leaders;
     unordered_map<uint64_t, string> snippets;
     unordered_set<string> uniqExceptions;
@@ -70,6 +72,8 @@ namespace fuzzer {
       void showStats(const Mutation &mutation, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>> &validJumpis);
       void updateTracebits(unordered_set<string> tracebits);
       void updatePredicates(unordered_map<string, u256> predicates);
+      void updateCriticalTracebits(unordered_set<string> criticalTracebits);
+      void updateCriticalPredicates(unordered_map<string, u256> criticalPredicates);
       void updateExceptions(unordered_set<string> uniqExceptions);
       void determineCriticism(ContractABI* mainCA);
       void start();
