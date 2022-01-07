@@ -198,7 +198,7 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
     /* set up environment to execute item */
     TargetContainer container;
     bytes revisedData = ContractABI::postprocessTestData(mainCA->randomTestcase());
-    FuzzItem item(revisedData, mainCA->calculateRealLen());
+    FuzzItem item(revisedData, mainCA->calculateRealLen(), mainCA->calculateCritical());
     auto executive = container.loadContract(fromHex(mainContract().bin), *mainCA);
     string contractName = mainContract().contractName;
     auto bytecodeBranch = BytecodeBranch(mainContract());
@@ -241,9 +241,9 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
 }
 
 /* Save data if interest */
-FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>>& validJumpis, vector<pair<int, bool>> _realLen) {
+FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth, const tuple<unordered_set<uint64_t>, unordered_set<uint64_t>>& validJumpis, vector<pair<int, bool>> _realLen, vector<bool> _areCritical) {
   auto revisedData = ContractABI::postprocessTestData(data);
-  FuzzItem item(revisedData, _realLen);
+  FuzzItem item(revisedData, _realLen, _areCritical);
   item.res = te.exec(revisedData, validJumpis);
   //Logger::debug(Logger::testFormat(item.data));
   fuzzStat.totalExecs ++;
@@ -372,7 +372,7 @@ void Fuzzer::start() {
         cout << "No valid jumpi" << endl;
         stop();
       }
-      saveIfInterest(executive, ca.randomTestcase(), 0, validJumpis, ca.calculateRealLen());
+      saveIfInterest(executive, ca.randomTestcase(), 0, validJumpis, ca.calculateRealLen(), ca.calculateCritical());
       int originHitCount = leaders.size();
       // No branch
       if (!originHitCount) {
@@ -417,7 +417,7 @@ void Fuzzer::start() {
         }
         Mutation mutation(curItem, make_tuple(codeDict, addressDict));
         auto save = [&](bytes data) {
-          auto item = saveIfInterest(executive, data, curItem.depth, validJumpis, curItem.realLen);
+          auto item = saveIfInterest(executive, data, curItem.depth, validJumpis, curItem.realLen, curItem.areCritical);
           /* Show every one second */
           u64 duration = timer.elapsed();
           if (!showSet.count(duration)) {
