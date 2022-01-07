@@ -332,6 +332,36 @@ namespace fuzzer {
     return make_pair(32, false);
   }
 
+  vector<bool> ContractABI::calculateCritical(){
+    vector<bool> ret;
+    for(int i = 0; i < 3; i++) ret.push_back(true);
+    for(auto fd : this->fds){
+      for(auto td : fd.tds){
+        switch(td.dimensions.size()){
+          case 0:{
+            ret.push_back(fd.isCritical);
+            break;
+          }
+          case 1:{
+            int numElem = td.dimensions[0] ? td.dimensions[0] : 5;
+            for(int i = 0; i < numElem; i += 1)
+              ret.push_back(fd.isCritical);
+            break;
+          }
+          case 2:{
+            int numElem = td.dimensions[0] ? td.dimensions[0] : 5;
+            int numSubElem = td.dimensions[1] ? td.dimensions[1] : 5;
+            for(int i = 0; i < numElem; i++)
+              for(int j = 0; j < numSubElem; j++)
+                ret.push_back(fd.isCritical);
+            break;
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
   ContractABI::ContractABI(string abiJson) {
     stringstream ss;
     ss << abiJson;

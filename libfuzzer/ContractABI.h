@@ -68,6 +68,8 @@ namespace fuzzer {
       vector<pair<int, bool>> calculateRealLen();
       /* calculate Length of a special paramater */
       pair<int, bool> specialRealLen(string name);
+      /* calculate a vector to record if the paramater is critical */
+      vector<bool> calculateCritical();
       /* Standard Json */
       string toStandardJson();
       uint64_t totalFuncs();
