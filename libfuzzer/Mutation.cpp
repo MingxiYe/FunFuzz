@@ -25,37 +25,61 @@ void Mutation::flipbit(int pos) {
   curFuzzItem.data[pos >> 3] ^= (128 >> (pos & 7));
 }
 
+bool Mutation::isWorthFlipping(int pos){
+  int offset = pos >> 3;
+  int dataOffset = offset % 32;
+  int slotOffset = offset / 32;
+  pair<int ,bool> realLen = curFuzzItem.realLen[slotOffset];
+  if(realLen.second) return dataOffset < realLen.first;
+  return (32 - dataOffset) <= realLen.first;
+}
+
 void Mutation::singleWalkingBit(OnMutateFunc cb) {
   stageName = "bitflip 1/1";
   stageMax = dataSize << 3;
+  uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax ; stageCur += 1) {
+    if( !isWorthFlipping(stageCur) ){
+      count += 1;
+      continue;
+    }
     flipbit(stageCur);
     cb(curFuzzItem.data);
     flipbit(stageCur);
   }
-  stageCycles[STAGE_FLIP1] += stageMax;
+  stageCycles[STAGE_FLIP1] += (stageMax - count);
 }
 
 void Mutation::twoWalkingBit(OnMutateFunc cb) {
   stageName = "bitflip 2/1";
   stageMax = (dataSize << 3) - 1;
+  uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
+    if( !isWorthFlipping(stageCur) || !isWorthFlipping(stageCur + 1) ){
+      count += 1;
+      continue;
+    }
     flipbit(stageCur);
     flipbit(stageCur + 1);
     cb(curFuzzItem.data);
     flipbit(stageCur);
     flipbit(stageCur + 1);
   }
-  stageCycles[STAGE_FLIP2] += stageMax;
+  stageCycles[STAGE_FLIP2] += (stageMax - count);
 }
 
 void Mutation::fourWalkingBit(OnMutateFunc cb) {
   stageName = "bitflip 4/1";
   stageMax = (dataSize << 3) - 3;
+  uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
+    if( !isWorthFlipping(stageCur) || !isWorthFlipping(stageCur + 1) || !isWorthFlipping(stageCur + 2) || !isWorthFlipping(stageCur + 3) ) {
+      count += 1;
+      continue;
+    }
     flipbit(stageCur);
     flipbit(stageCur + 1);
     flipbit(stageCur + 2);
@@ -66,14 +90,20 @@ void Mutation::fourWalkingBit(OnMutateFunc cb) {
     flipbit(stageCur + 2);
     flipbit(stageCur + 3);
   }
-  stageCycles[STAGE_FLIP4] += stageMax;
+  stageCycles[STAGE_FLIP4] += (stageMax - count);
 }
 
 void Mutation::singleWalkingByte(OnMutateFunc cb) {
   stageName = "bitflip 8/8";
   stageMax = dataSize;
+  uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
+    for(int i = 0; i < 8; i++)
+      if(!isWorthFlipping((stageCur << 3) + i)){
+        count += 1;
+        continue;
+      }
     curFuzzItem.data[stageCur] ^= 0xFF;
     FuzzItem item = cb(curFuzzItem.data);
     /* We also use this stage to pull off a simple trick: we identify
@@ -94,7 +124,7 @@ void Mutation::singleWalkingByte(OnMutateFunc cb) {
   if (effCount != effALen(dataSize) && effCount * 100 / effALen(dataSize) > EFF_MAX_PERC) {
     eff = bytes(effALen(dataSize), 1);
   }
-  stageCycles[STAGE_FLIP8] += stageMax;
+  stageCycles[STAGE_FLIP8] += (stageMax - count);
 }
 
 void Mutation::twoWalkingByte(OnMutateFunc cb) {
@@ -104,6 +134,12 @@ void Mutation::twoWalkingByte(OnMutateFunc cb) {
   /* Start fuzzing */
   u8 *buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 1; i += 1) {
+    for(int j = 0; j < 16; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax--;
+        continue;
+      }
+    }
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) {
       stageMax--;
@@ -124,6 +160,12 @@ void Mutation::fourWalkingByte(OnMutateFunc cb) {
   /* Start fuzzing */
   u8 *buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 3; i += 1) {
+    for(int j = 0; j < 32; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax--;
+        continue;
+      }
+    }
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&
         !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)]) {
@@ -144,6 +186,12 @@ void Mutation::singleArith(OnMutateFunc cb) {
   stageCur = 0;
   /* Start fuzzing */
   for (int i = 0; i < dataSize; i += 1) {
+    for(int j = 0; j < 8; j++){
+      if(!isWorthFlipping((stageCur << 3) + j)){
+        stageMax -= (2 * ARITH_MAX);
+        continue;
+      }
+    } 
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)]) {
       stageMax -= (2 * ARITH_MAX);
@@ -176,6 +224,12 @@ void Mutation::twoArith(OnMutateFunc cb) {
   /* Start fuzzing */
   byte *buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 1; i += 1) {
+    for(int j = 0; j < 16; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax--;
+        continue;
+      }
+    }
     u16 orig = *(u16*)(buf + i);
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) {
       stageMax -= 4 * ARITH_MAX;
@@ -219,6 +273,12 @@ void Mutation::fourArith(OnMutateFunc cb) {
   /* Start fuzzing */
   byte *buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 3; i += 1) {
+    for(int j = 0; j < 32; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax -= 4 * ARITH_MAX;
+        continue;
+      }
+    }
     u32 orig = *(u32*)(buf + i);
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)] && !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)]) {
@@ -262,6 +322,12 @@ void Mutation::singleInterest(OnMutateFunc cb) {
   stageCur = 0;
   /* Start fuzzing */
   for (int i = 0; i < dataSize; i += 1) {
+    for(int j = 0; j < 8; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax -= sizeof(INTERESTING_8);
+        continue;
+      }
+    }
     u8 orig = curFuzzItem.data[i];
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)]) {
@@ -289,6 +355,12 @@ void Mutation::twoInterest(OnMutateFunc cb) {
   /* Start fuzzing */
   byte *out_buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 1; i += 1) {
+    for(int j = 0; j < 16; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax -= sizeof(INTERESTING_16);
+        continue;
+      }
+    }
     u16 orig = *(u16*)(out_buf + i);
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) {
       stageMax -= sizeof(INTERESTING_16);
@@ -324,6 +396,12 @@ void Mutation::fourInterest(OnMutateFunc cb) {
   /* Start fuzzing */
   byte *out_buf = curFuzzItem.data.data();
   for (int i = 0; i < dataSize - 3; i++) {
+    for(int j = 0; j < 32; j++){
+      if(!isWorthFlipping((i << 3) + j)){
+        stageMax -= sizeof(INTERESTING_32) >> 1;
+        continue;
+      }
+    }
     u32 orig = *(u32*)(out_buf + i);
     /* Let's consult the effector map... */
     if (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&

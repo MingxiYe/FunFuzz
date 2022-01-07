@@ -24,6 +24,8 @@ namespace fuzzer {
       string stageName = "";
       static uint64_t stageCycles[32];
       Mutation(FuzzItem item, Dicts dicts);
+      /* calculate if this bit is worth flipping */
+      bool isWorthFlipping(int pos);
       void singleWalkingBit(OnMutateFunc cb);
       void twoWalkingBit(OnMutateFunc cb);
       void fourWalkingBit(OnMutateFunc cb);
