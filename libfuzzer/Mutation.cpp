@@ -34,13 +34,19 @@ bool Mutation::isWorthFlipping(int pos){
   return (32 - dataOffset) <= realLen.first;
 }
 
+bool Mutation::isCritical(int pos){
+  int offset = pos >> 3;
+  int slotOffset = offset / 32;
+  return curFuzzItem.areCritical[slotOffset];
+}
+
 void Mutation::singleWalkingBit(OnMutateFunc cb) {
   stageName = "bitflip 1/1";
   stageMax = dataSize << 3;
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax ; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) ){
+    if( !isWorthFlipping(stageCur) || !isCritical(stageCur) ){
       count += 1;
       continue;
     }
@@ -57,7 +63,10 @@ void Mutation::twoWalkingBit(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) || !isWorthFlipping(stageCur + 1) ){
+    if( !isWorthFlipping(stageCur) || 
+        !isWorthFlipping(stageCur + 1) || 
+        !isCritical(stageCur) || 
+        !isCritical(stageCur + 1)){
       count += 1;
       continue;
     }
@@ -76,7 +85,14 @@ void Mutation::fourWalkingBit(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) || !isWorthFlipping(stageCur + 1) || !isWorthFlipping(stageCur + 2) || !isWorthFlipping(stageCur + 3) ) {
+    if( !isWorthFlipping(stageCur) || 
+        !isWorthFlipping(stageCur + 1) || 
+        !isWorthFlipping(stageCur + 2) || 
+        !isWorthFlipping(stageCur + 3) ||
+        !isCritical(stageCur) ||
+        !isCritical(stageCur + 1) || 
+        !isCritical(stageCur + 2) ||
+        !isCritical(stageCur + 3)) {
       count += 1;
       continue;
     }

@@ -26,6 +26,8 @@ namespace fuzzer {
       Mutation(FuzzItem item, Dicts dicts);
       /* calculate if this bit is worth flipping */
       bool isWorthFlipping(int pos);
+      /* calculate if the paramater of this pos belongs to a critical function */
+      bool isCritical(int pos);
       void singleWalkingBit(OnMutateFunc cb);
       void twoWalkingBit(OnMutateFunc cb);
       void fourWalkingBit(OnMutateFunc cb);
