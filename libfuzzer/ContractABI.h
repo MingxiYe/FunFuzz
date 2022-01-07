@@ -64,6 +64,10 @@ namespace fuzzer {
       bytes randomTestcase();
       /* Update then call encodeConstructor/encodeFunction to feed to evm */
       void updateTestData(bytes data);
+      /* calculate realLen of each paramater */
+      vector<pair<int, bool>> calculateRealLen();
+      /* calculate Length of a special paramater */
+      pair<int, bool> specialRealLen(string name);
       /* Standard Json */
       string toStandardJson();
       uint64_t totalFuncs();

@@ -277,6 +277,61 @@ namespace fuzzer {
     return ret;
   }
   
+  vector<pair<int, bool>> ContractABI::calculateRealLen(){
+    vector<pair<int, bool>> ret;
+    for(int i = 0; i < 3; i++) ret.push_back(make_pair(32,false));
+    for(auto fd : this->fds){
+      for(auto td : fd.tds){
+        switch(td.dimensions.size()){
+          case 0:{
+            ret.push_back(specialRealLen(td.name));
+            break;
+          }
+          case 1:{
+            int numElem = td.dimensions[0] ? td.dimensions[0] : 5;
+            pair<int, bool> temp = specialRealLen(td.name);
+            for(int i = 0; i < numElem; i += 1)
+              ret.push_back(temp);
+            break;
+          }
+          case 2:{
+            int numElem = td.dimensions[0] ? td.dimensions[0] : 5;
+            int numSubElem = td.dimensions[1] ? td.dimensions[1] : 5;
+            pair<int, bool> temp = specialRealLen(td.name);
+            for(int i = 0; i < numElem; i += 1){
+              for(int j = 0; j < numSubElem; j += 1){
+                ret.push_back(temp);
+              }
+            }
+            break;
+          }
+        }
+      }
+    }
+    return ret;
+  }
+
+  pair<int, bool> ContractABI::specialRealLen(string type){
+    string dynamicPatterns[5] = {"int", "uint", "fixed", "ufixed", "bytes"};
+    string staticPatterns[3] = {"address", "function", "bool"};
+    for(int i = 1; i <= 32; i += 1){
+      for(auto pattern : dynamicPatterns){
+        if(boost::starts_with(type, pattern + to_string(i*8)) && pattern != "bytes")
+          return make_pair(i, false);
+        else if(boost::starts_with(type, pattern + to_string(i)) && pattern == "bytes")
+          return make_pair(i, true);
+      }
+    }
+    for(int i = 0; i < 3; i ++){
+      switch(i){
+        case 0: if(boost::starts_with(type, staticPatterns[i])) return make_pair(20, false);
+        case 1: if(boost::starts_with(type, staticPatterns[i])) return make_pair(24, true);
+        case 2: if(boost::starts_with(type, staticPatterns[i])) return make_pair(1, false);
+      }
+    }
+    return make_pair(32, false);
+  }
+
   ContractABI::ContractABI(string abiJson) {
     stringstream ss;
     ss << abiJson;
