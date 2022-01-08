@@ -45,9 +45,9 @@ namespace fuzzer {
   };
   struct Leader {
     FuzzItem item;
-    u256 comparisonValue = 0;
-    Leader(FuzzItem _item, u256 _comparisionValue): item(_item) {
-      comparisonValue = _comparisionValue;
+    float dt = 0;
+    Leader(FuzzItem _item, float _dt): item(_item) {
+      dt = _dt;
     }
   };
   class Fuzzer {
