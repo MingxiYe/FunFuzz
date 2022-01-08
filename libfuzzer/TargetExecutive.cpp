@@ -189,7 +189,8 @@ namespace fuzzer {
             u256 right = vm->stack()[stackSize - 2];
             /* calculate if command inside a function */
             u256 temp = left > right ? left - right : right - left;
-            lastCompValue = temp + 1;
+            /* set K as 5 when this branch does not belong to a critical function */
+            lastCompValue = temp + 5;
           }
           break;
         }
