@@ -131,7 +131,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   auto predicateSize = padStr(to_string(predicates.size()), 5);
   auto contract = mainContract();
   auto toResult = [](bool val) { return val ? "found" : "none "; };
-  printf(cGRN Bold "%sAFL Solidity v0.0.1 (%s)" cRST "\n", padStr("", 10).c_str(), contract.contractName.substr(0, 20).c_str());
+  printf(cGRN Bold "%s   FunFuzz   v0.0.1 (%s)" cRST "\n", padStr("", 10).c_str(), contract.contractName.substr(0, 20).c_str());
   printf(bTL bV5 cGRN " processing time " cRST bV20 bV20 bV5 bV2 bV2 bV5 bV bTR "\n");
   printf(bH "      run time : %s " bH "\n", formatDuration(duration).data());
   printf(bH " last new path : %s " bH "\n",formatDuration(fromLastNewPath).data());
@@ -226,7 +226,6 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
       Logger::debug("Find basicblock with offset: " + to_string(dest));
       /* if find critical opcodes */
       vector<Opcode*> opcodes = (*basicBlockIter)->getOpcodes();
-      Logger::debug((*basicBlockIter)->toString());
       auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){return s->getOpcodeID() == OpcodeID::CALL || s->getOpcodeID() == OpcodeID::DELEGATECALL ||s->getOpcodeID() == OpcodeID::TIMESTAMP ||s->getOpcodeID() == OpcodeID::NUMBER ||s->getOpcodeID() == OpcodeID::INVALID;});
       if(opcodeIter != opcodes.end()){
         fdIter->isCritical = true;
@@ -419,7 +418,9 @@ void Fuzzer::start() {
           }
           /* Stop program */
           u64 speed = (u64)(fuzzStat.totalExecs / timer.elapsed());
-          if (timer.elapsed() > fuzzParam.duration || speed <= 10 || !predicates.size()) {
+          if (timer.elapsed() > fuzzParam.duration ||
+              speed <= 10 || 
+              !predicates.size()) {
             vulnerabilities = container.analyze();
             switch(fuzzParam.reporter) {
               case TERMINAL: {
@@ -472,40 +473,40 @@ void Fuzzer::start() {
           fuzzStat.stageFinds[STAGE_FLIP32] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
 
-          //Logger::debug("SingleArith");
-          //mutation.singleArith(save);
-          //fuzzStat.stageFinds[STAGE_ARITH8] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("SingleArith");
+          mutation.singleArith(save);
+          fuzzStat.stageFinds[STAGE_ARITH8] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("TwoArith");
-          //mutation.twoArith(save);
-          //fuzzStat.stageFinds[STAGE_ARITH16] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("TwoArith");
+          mutation.twoArith(save);
+          fuzzStat.stageFinds[STAGE_ARITH16] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("FourArith");
-          //mutation.fourArith(save);
-          //fuzzStat.stageFinds[STAGE_ARITH32] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("FourArith");
+          mutation.fourArith(save);
+          fuzzStat.stageFinds[STAGE_ARITH32] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("SingleInterest");
-          //mutation.singleInterest(save);
-          //fuzzStat.stageFinds[STAGE_INTEREST8] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("SingleInterest");
+          mutation.singleInterest(save);
+          fuzzStat.stageFinds[STAGE_INTEREST8] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("TwoInterest");
-          //mutation.twoInterest(save);
-          //fuzzStat.stageFinds[STAGE_INTEREST16] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("TwoInterest");
+          mutation.twoInterest(save);
+          fuzzStat.stageFinds[STAGE_INTEREST16] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("FourInterest");
-          //mutation.fourInterest(save);
-          //fuzzStat.stageFinds[STAGE_INTEREST32] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("FourInterest");
+          mutation.fourInterest(save);
+          fuzzStat.stageFinds[STAGE_INTEREST32] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
-          //Logger::debug("overwriteDict");
-          //mutation.overwriteWithDictionary(save);
-          //fuzzStat.stageFinds[STAGE_EXTRAS_UO] += leaders.size() - originHitCount;
-          //originHitCount = leaders.size();
+          Logger::debug("overwriteDict");
+          mutation.overwriteWithDictionary(save);
+          fuzzStat.stageFinds[STAGE_EXTRAS_UO] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
 
           Logger::debug("overwriteAddress");
           mutation.overwriteWithAddressDictionary(save);
