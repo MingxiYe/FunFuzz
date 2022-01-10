@@ -176,7 +176,6 @@ void Mutation::twoWalkingByte(OnMutateFunc cb) {
     stageCur ++;
     *(u16*)(buf + i) ^= 0xFFFF;
   }
-  cout << stageMax << endl;
   stageCycles[STAGE_FLIP16] += stageMax;
 }
 

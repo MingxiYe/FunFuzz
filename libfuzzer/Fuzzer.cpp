@@ -95,9 +95,12 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   auto cyclePercentage = (uint64_t)((float)(fuzzStat.idx + 1) / leaders.size() * 100);
   auto cycleProgress = padStr(to_string(fuzzStat.idx + 1) + " (" + to_string(cyclePercentage) + "%)", 20);
   auto cycleDone = padStr(to_string(fuzzStat.queueCycle), 15);
+  auto partialCoverage = (criticalPredicates.size() + criticalTracebits.size()) == 0 ? 
+                          "0%" : 
+                          to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%";
   auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
   auto numBranches = padStr(to_string(totalBranches), 15);
-  auto partialCoverage = padStr(to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%", 15);
+  auto partialCoverageStr = padStr(partialCoverage, 15);
   auto pTCoverage = padStr(to_string((uint64_t)((float) criticalTracebits.size() / (float) totalBranches * 100)) + "%", 15);
   auto coverage = padStr(to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%", 15);
   auto flip1 = to_string(fuzzStat.stageFinds[STAGE_FLIP1]) + "/" + to_string(mutation.stageCycles[STAGE_FLIP1]);
@@ -139,7 +142,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bH "  now trying : %s" bH " cycles done : %s" bH "\n", nowTrying.c_str(), cycleDone.c_str());
   printf(bH " stage execs : %s" bH "    branches : %s" bH "\n", stageExec.c_str(), numBranches.c_str());
   printf(bH " total execs : %s" bH "   Tcoverage : %s" bH "\n", allExecs.c_str(), coverage.c_str());
-  printf(bH "  exec speed : %s" bH "   Pcoverage : %s" bH "\n", execSpeed.c_str(), partialCoverage.c_str());
+  printf(bH "  exec speed : %s" bH "   Pcoverage : %s" bH "\n", execSpeed.c_str(), partialCoverageStr.c_str());
   printf(bH "  cycle prog : %s" bH "  PTcoverage : %s" bH "\n", cycleProgress.c_str(), pTCoverage.c_str());
   printf(bLTR bV5 cGRN " fuzzing yields " cRST bV5 bV5 bV5 bV2 bV bBTR bV10 bV bTTR bV cGRN " path geometry " cRST bV2 bV2 bRTR "\n");
   printf(bH "   bit flips : %s" bH "     pending : %s" bH "\n", bitflip.c_str(), pending.c_str());
@@ -165,7 +168,9 @@ void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint
   int count = timer.elapsed();
   auto totalBranches = (get<0>(validJumpis).size() + get<1>(validJumpis).size()) * 2;
   auto totalCoverage = to_string((uint64_t)((float) tracebits.size() / (float) totalBranches * 100)) + "%";
-  auto partialCoverage = to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%";
+  auto partialCoverage = (criticalPredicates.size() + criticalTracebits.size()) == 0 ? 
+                          "0%" : 
+                          to_string((uint64_t)((float) criticalTracebits.size() / (float) (criticalPredicates.size() + criticalTracebits.size()) * 100)) + "%";
   auto pTCoverage = to_string((uint64_t)((float) criticalTracebits.size() / (float) totalBranches * 100)) + "%";
   ofstream stats(contract.contractName + "/stats" + to_string(count) + ".json");
   root.put("duration", timer.elapsed());
