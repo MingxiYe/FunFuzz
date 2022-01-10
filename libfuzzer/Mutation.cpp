@@ -119,11 +119,16 @@ void Mutation::singleWalkingByte(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
+    bool flag = false;
     for(int i = 0; i < 8; i++)
       if(!isWorthFlipping((stageCur << 3) + i)){
-        count += 1;
-        continue;
+        flag = true;
+        break;
       }
+    if(flag){
+      count += 1;
+      continue;
+    }
     curFuzzItem.data[stageCur] ^= 0xFF;
     FuzzItem item = cb(curFuzzItem.data);
     /* We also use this stage to pull off a simple trick: we identify
