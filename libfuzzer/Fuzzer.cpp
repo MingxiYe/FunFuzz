@@ -503,10 +503,10 @@ void Fuzzer::start() {
           fuzzStat.stageFinds[STAGE_INTEREST32] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
 
-          Logger::debug("overwriteDict");
-          mutation.overwriteWithDictionary(save);
-          fuzzStat.stageFinds[STAGE_EXTRAS_UO] += leaders.size() - originHitCount;
-          originHitCount = leaders.size();
+          // Logger::debug("overwriteDict");
+          // mutation.overwriteWithDictionary(save);
+          // fuzzStat.stageFinds[STAGE_EXTRAS_UO] += leaders.size() - originHitCount;
+          // originHitCount = leaders.size();
 
           Logger::debug("overwriteAddress");
           mutation.overwriteWithAddressDictionary(save);
@@ -518,6 +518,7 @@ void Fuzzer::start() {
           fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
         } else {
+          f = f < 1 ? 1 : f;
           for(int i = 0; i < int(f); i++){
             Logger::debug("havoc");
             mutation.havoc(save);
