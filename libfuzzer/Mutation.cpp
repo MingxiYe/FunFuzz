@@ -46,7 +46,9 @@ void Mutation::singleWalkingBit(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax ; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) || !isCritical(stageCur) ){
+    if(!isWorthFlipping(stageCur)
+      // || !isCritical(stageCur)
+      ){
       count += 1;
       continue;
     }
@@ -63,10 +65,11 @@ void Mutation::twoWalkingBit(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) || 
-        !isWorthFlipping(stageCur + 1) || 
-        !isCritical(stageCur) || 
-        !isCritical(stageCur + 1)){
+    if( !isWorthFlipping(stageCur) 
+        || !isWorthFlipping(stageCur + 1) 
+        // || !isCritical(stageCur) 
+        // || !isCritical(stageCur + 1)
+      ){
       count += 1;
       continue;
     }
@@ -85,14 +88,15 @@ void Mutation::fourWalkingBit(OnMutateFunc cb) {
   uint64_t count = 0;
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
-    if( !isWorthFlipping(stageCur) || 
-        !isWorthFlipping(stageCur + 1) || 
-        !isWorthFlipping(stageCur + 2) || 
-        !isWorthFlipping(stageCur + 3) ||
-        !isCritical(stageCur) ||
-        !isCritical(stageCur + 1) || 
-        !isCritical(stageCur + 2) ||
-        !isCritical(stageCur + 3)) {
+    if(!isWorthFlipping(stageCur)
+      || !isWorthFlipping(stageCur + 1)
+      || !isWorthFlipping(stageCur + 2)
+      || !isWorthFlipping(stageCur + 3)
+      // || !isCritical(stageCur)
+      // || !isCritical(stageCur + 1)
+      // || !isCritical(stageCur + 2)
+      // || !isCritical(stageCur + 3)
+      ){
       count += 1;
       continue;
     }
