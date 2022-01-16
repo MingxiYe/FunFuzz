@@ -47,7 +47,7 @@ void Mutation::singleWalkingBit(OnMutateFunc cb) {
   /* Start fuzzing */
   for (stageCur = 0; stageCur < stageMax ; stageCur += 1) {
     if(!isWorthFlipping(stageCur)
-      // || !isCritical(stageCur)
+      || !isCritical(stageCur)
       ){
       count += 1;
       continue;
@@ -67,8 +67,8 @@ void Mutation::twoWalkingBit(OnMutateFunc cb) {
   for (stageCur = 0; stageCur < stageMax; stageCur += 1) {
     if( !isWorthFlipping(stageCur) 
         || !isWorthFlipping(stageCur + 1) 
-        // || !isCritical(stageCur) 
-        // || !isCritical(stageCur + 1)
+        || !isCritical(stageCur) 
+        || !isCritical(stageCur + 1)
       ){
       count += 1;
       continue;
