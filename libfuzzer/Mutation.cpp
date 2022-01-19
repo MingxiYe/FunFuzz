@@ -92,10 +92,10 @@ void Mutation::fourWalkingBit(OnMutateFunc cb) {
       || !isWorthFlipping(stageCur + 1)
       || !isWorthFlipping(stageCur + 2)
       || !isWorthFlipping(stageCur + 3)
-      // || !isCritical(stageCur)
-      // || !isCritical(stageCur + 1)
-      // || !isCritical(stageCur + 2)
-      // || !isCritical(stageCur + 3)
+      || !isCritical(stageCur)
+      || !isCritical(stageCur + 1)
+      || !isCritical(stageCur + 2)
+      || !isCritical(stageCur + 3)
       ){
       count += 1;
       continue;
