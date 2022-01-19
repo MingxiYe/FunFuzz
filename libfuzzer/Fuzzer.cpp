@@ -263,6 +263,8 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
     item.depth = depth + 1;
     auto leader = Leader(item, dt);
     leaders.insert(make_pair(item.res.cksum, leader));
+    if(maxD == -1 || maxD < dt) maxD = dt;
+    if(minD == -1 || minD > dt) minD = dt;
     auto qIt = find_if(queues.begin(), queues.end(), [=](const string &s){ return s == item.res.cksum;});
     if(qIt == queues.end()) queues.push_back(item.res.cksum);
     if(depth + 1 > fuzzStat.maxdepth) fuzzStat.maxdepth = depth + 1;
@@ -270,6 +272,8 @@ FuzzItem Fuzzer::saveIfInterest(TargetExecutive& te, bytes data, uint64_t depth,
     item.depth = depth + 1;
     auto leader = Leader(item, dt);
     leaders.insert(make_pair(item.res.cksum, leader));
+    if(maxD == -1 || maxD < dt) maxD = dt;
+    if(minD == -1 || minD > dt) minD = dt;
     queues.push_back(item.res.cksum);
     if(depth + 1 > fuzzStat.maxdepth) fuzzStat.maxdepth = depth + 1;
     fuzzStat.lastNewPath = timer.elapsed();
@@ -385,9 +389,11 @@ void Fuzzer::start() {
         auto leaderIt = leaders.find(queues[fuzzStat.idx]);
         auto curItem = leaderIt->second.item;
         auto dt = leaderIt->second.dt;
-        float T = pow(0.9, curItem.fuzzedCount);
-        auto pt = (1 - dt) * (1 - T) + 0.5  *T;
-        auto f = pow(2, 10 * (pt - 0.5));
+        auto d = 1;
+        if(maxD != minD) d = (dt - minD)/(maxD - minD);
+        // float T = pow(0.9, curItem.fuzzedCount);
+        // auto pt = (1 - dt) * (1 - T) + 0.5  *T;
+        auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
           Logger::debug(" == Leader ==");
           Logger::debug("Branch \t\t\t\t " + leaderIt->first);

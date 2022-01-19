@@ -60,6 +60,8 @@ namespace fuzzer {
     unordered_map<string, Leader> leaders;
     unordered_map<uint64_t, string> snippets;
     unordered_set<string> uniqExceptions;
+    float maxD = -1;
+    float minD = -1;
     Timer timer;
     FuzzParam fuzzParam;
     FuzzStat fuzzStat;
