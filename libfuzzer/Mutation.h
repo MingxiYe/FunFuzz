@@ -14,6 +14,7 @@ namespace fuzzer {
   class Mutation {
     FuzzItem curFuzzItem;
     Dicts dicts;
+    float _pt = 0.5;
     uint64_t effCount = 0;
     bytes eff;
     void flipbit(int pos);
@@ -23,11 +24,13 @@ namespace fuzzer {
       uint64_t stageCur = 0;
       string stageName = "";
       static uint64_t stageCycles[32];
-      Mutation(FuzzItem item, Dicts dicts);
+      Mutation(FuzzItem item, Dicts dicts, float _pt);
       /* calculate if this bit is worth flipping */
       bool isWorthFlipping(int pos);
       /* calculate if the paramater of this pos belongs to a critical function */
       bool isCritical(int pos);
+      /* calculate if it is need to jump over this round of mutation */
+      bool isLucky();
       void singleWalkingBit(OnMutateFunc cb);
       void twoWalkingBit(OnMutateFunc cb);
       void fourWalkingBit(OnMutateFunc cb);
