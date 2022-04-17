@@ -327,6 +327,7 @@ void Fuzzer::start() {
   TargetContainer container;
   Dictionary codeDict, addressDict;
   unordered_set<u64> showSet;
+  srand((unsigned)time(NULL));
   for (auto contractInfo : fuzzParam.contractInfo) {
     auto isAttacker = contractInfo.contractName.find(fuzzParam.attackerName) != string::npos;
     if (!contractInfo.isMain && !isAttacker) continue;
@@ -365,7 +366,7 @@ void Fuzzer::start() {
       auto numUncoveredBranches = predicates.size();
       if (!numUncoveredBranches) {
         auto curItem = (*leaders.begin()).second.item;
-        Mutation mutation(curItem, make_tuple(codeDict, addressDict), 0.5);
+        Mutation mutation(curItem, make_tuple(codeDict, addressDict), 1);
         vulnerabilities = container.analyze();
         switch (fuzzParam.reporter) {
           case TERMINAL: {
@@ -391,8 +392,9 @@ void Fuzzer::start() {
         auto dt = leaderIt->second.dt;
         auto D = 1;
         if(maxD != minD) D = (dt - minD)/(maxD - minD);
-        float Texp = pow(20, - timer.elapsed()/120);
+        float Texp = pow(2, - timer.elapsed()/120);
         float pt = (1 - D) * (1 - Texp) + 0.5 * Texp;
+        float energy = leaderIt->second.item.res.predicates.size() * pt;
         // auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
           Logger::debug(" == Leader ==");
@@ -401,7 +403,7 @@ void Fuzzer::start() {
           Logger::debug("Fuzzed \t\t\t\t " + to_string(curItem.fuzzedCount));
           Logger::debug(Logger::testFormat(curItem.data));
         }
-        Mutation mutation(curItem, make_tuple(codeDict, addressDict), pt);
+        Mutation mutation(curItem, make_tuple(codeDict, addressDict), energy);
         auto save = [&](bytes data) {
           auto item = saveIfInterest(executive, data, curItem.depth, validJumpis, curItem.realLen, curItem.areCritical);
           /* Show every one second */
@@ -529,18 +531,20 @@ void Fuzzer::start() {
           fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
         } else {
-          Logger::debug("havoc");
-          mutation.havoc(save);
-          fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
-          originHitCount = leaders.size();
-          Logger::debug("Splice");
-          vector<FuzzItem> items = {};
-          for (auto it : leaders) items.push_back(it.second.item);
-          if (mutation.splice(items)) {
+          for(int i = 0; i < int(energy); i++){
             Logger::debug("havoc");
             mutation.havoc(save);
             fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
             originHitCount = leaders.size();
+            Logger::debug("Splice");
+            vector<FuzzItem> items = {};
+            for (auto it : leaders) items.push_back(it.second.item);
+            if (mutation.splice(items)) {
+              Logger::debug("havoc");
+              mutation.havoc(save);
+              fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
+              originHitCount = leaders.size();
+            }
           }
         }
         leaderIt->second.item.fuzzedCount += 1;

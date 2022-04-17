@@ -12,7 +12,7 @@ using namespace fuzzer;
 
 uint64_t Mutation::stageCycles[32] = {};
 
-Mutation::Mutation(FuzzItem item, Dicts dicts, float _pt): curFuzzItem(item), dicts(dicts), dataSize(item.data.size()), _pt(_pt) {
+Mutation::Mutation(FuzzItem item, Dicts dicts, float _energy): curFuzzItem(item), dicts(dicts), dataSize(item.data.size()), energy(_energy) {
   effCount = 0;
   eff = bytes(effALen(dataSize), 0);
   eff[0] = 1;
@@ -21,7 +21,6 @@ Mutation::Mutation(FuzzItem item, Dicts dicts, float _pt): curFuzzItem(item), di
     effCount ++;
   }
   stageName = "init";
-  srand((unsigned)time(NULL));
 }
 
 void Mutation::flipbit(int pos) {
@@ -45,7 +44,7 @@ bool Mutation::isCritical(int pos){
 
 bool Mutation::isLucky(){
   int rand_max = 1000000;
-  if( float(rand() % rand_max) / rand_max < _pt)
+  if( (float(rand() % rand_max) / rand_max) < energy)
     return true;
   return false;
 }
@@ -139,7 +138,9 @@ void Mutation::singleWalkingByte(OnMutateFunc cb) {
         break;
       }
     }
-    if(flag || !isLucky()){
+    if(flag 
+      || !isLucky()
+      ){
       count += 1;
       continue;
     }
@@ -181,7 +182,11 @@ void Mutation::twoWalkingByte(OnMutateFunc cb) {
       }
     }
     /* Let's consult the effector map... */
-    if(flag || (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) || !isLucky()){
+    if(flag 
+      || (!eff[effAPos(i)] 
+      && !eff[effAPos(i + 1)]) 
+      || !isLucky()
+      ){
       stageMax--;
       continue;
     }
@@ -213,9 +218,10 @@ void Mutation::fourWalkingByte(OnMutateFunc cb) {
     }
     /* Let's consult the effector map... */
     if(flag 
-        || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] && 
-        !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky()){
+      || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] && 
+      !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
+      || !isLucky()
+      ){
       stageMax --;
       continue;
     }
@@ -241,7 +247,10 @@ void Mutation::singleArith(OnMutateFunc cb) {
       }
     }
     /* Let's consult the effector map... */
-    if (flag || !eff[effAPos(i)] || !isLucky()) {
+    if (flag 
+      || !eff[effAPos(i)] 
+      || !isLucky()
+      ){
       stageMax -= (2 * ARITH_MAX);
       continue;
     }
@@ -280,7 +289,11 @@ void Mutation::twoArith(OnMutateFunc cb) {
       }
     }
     u16 orig = *(u16*)(buf + i);
-    if(flag || (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) || !isLucky()) {
+    if(flag 
+      || (!eff[effAPos(i)] 
+      && !eff[effAPos(i + 1)]) 
+      || !isLucky()
+      ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
     }
@@ -334,7 +347,8 @@ void Mutation::fourArith(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] 
         && !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky()) {
+        || !isLucky()
+      ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
     }
@@ -384,7 +398,10 @@ void Mutation::singleInterest(OnMutateFunc cb) {
     }
     u8 orig = curFuzzItem.data[i];
     /* Let's consult the effector map... */
-    if (flag || !eff[effAPos(i)] || !isLucky()) {
+    if (flag 
+      || !eff[effAPos(i)] 
+      || !isLucky()
+      ) {
       stageMax -= sizeof(INTERESTING_8);
       continue;
     }
@@ -417,7 +434,11 @@ void Mutation::twoInterest(OnMutateFunc cb) {
       }
     }
     u16 orig = *(u16*)(out_buf + i);
-    if(flag || (!eff[effAPos(i)] && !eff[effAPos(i + 1)]) || !isLucky()) {
+    if(flag 
+      || (!eff[effAPos(i)] 
+      && !eff[effAPos(i + 1)]) 
+      || !isLucky()
+      ) {
       stageMax -= sizeof(INTERESTING_16);
       continue;
     }
@@ -463,7 +484,8 @@ void Mutation::fourInterest(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&
         !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky()) {
+        || !isLucky()
+      ) {
       stageMax -= sizeof(INTERESTING_32) >> 1;
       continue;
     }

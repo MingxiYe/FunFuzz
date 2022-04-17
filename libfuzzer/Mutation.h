@@ -14,7 +14,7 @@ namespace fuzzer {
   class Mutation {
     FuzzItem curFuzzItem;
     Dicts dicts;
-    float _pt = 0.5;
+    float energy = 1;
     uint64_t effCount = 0;
     bytes eff;
     void flipbit(int pos);
