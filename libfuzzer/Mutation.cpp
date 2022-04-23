@@ -400,7 +400,6 @@ void Mutation::singleInterest(OnMutateFunc cb) {
     /* Let's consult the effector map... */
     if (flag 
       || !eff[effAPos(i)] 
-      || !isLucky()
       ) {
       stageMax -= sizeof(INTERESTING_8);
       continue;
@@ -437,7 +436,6 @@ void Mutation::twoInterest(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky()
       ) {
       stageMax -= sizeof(INTERESTING_16);
       continue;
@@ -484,7 +482,6 @@ void Mutation::fourInterest(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&
         !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky()
       ) {
       stageMax -= sizeof(INTERESTING_32) >> 1;
       continue;
