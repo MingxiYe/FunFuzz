@@ -392,9 +392,14 @@ void Fuzzer::start() {
         auto dt = leaderIt->second.dt;
         auto D = 1;
         if(maxD != minD) D = (dt - minD)/(maxD - minD);
-        float Texp = pow(20, - timer.elapsed()/60);
-        float pt = (1 - D) * (1 - Texp) + 0.5 * Texp;
-        float energy = leaderIt->second.item.res.predicates.size() * pt;
+        float Texp;
+        float t = timer.elapsed();
+        if(t < 60){
+          Texp = 0;
+        }else{
+          Texp = 1 + exp(t / (225 * D));
+        }
+        float energy = pow(2, 3 * (1 - D) * (1 + Texp));
         // auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
           Logger::debug(" == Leader ==");
@@ -432,7 +437,7 @@ void Fuzzer::start() {
           /* Stop program */
           u64 speed = (u64)(fuzzStat.totalExecs / timer.elapsed());
           if (timer.elapsed() > fuzzParam.duration ||
-              speed <= 10 || 
+              // speed <= 10 || 
               !predicates.size()) {
             vulnerabilities = container.analyze();
             switch(fuzzParam.reporter) {
@@ -531,20 +536,18 @@ void Fuzzer::start() {
           fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
         } else {
-          for(int i = 0; i < int(energy); i++){
+          Logger::debug("havoc");
+          mutation.havoc(save);
+          fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
+          originHitCount = leaders.size();
+          Logger::debug("Splice");
+          vector<FuzzItem> items = {};
+          for (auto it : leaders) items.push_back(it.second.item);
+          if (mutation.splice(items)) {
             Logger::debug("havoc");
             mutation.havoc(save);
             fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
             originHitCount = leaders.size();
-            Logger::debug("Splice");
-            vector<FuzzItem> items = {};
-            for (auto it : leaders) items.push_back(it.second.item);
-            if (mutation.splice(items)) {
-              Logger::debug("havoc");
-              mutation.havoc(save);
-              fuzzStat.stageFinds[STAGE_HAVOC] += leaders.size() - originHitCount;
-              originHitCount = leaders.size();
-            }
           }
         }
         leaderIt->second.item.fuzzedCount += 1;

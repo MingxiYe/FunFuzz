@@ -42,9 +42,9 @@ bool Mutation::isCritical(int pos){
   return curFuzzItem.areCritical[slotOffset];
 }
 
-bool Mutation::isLucky(){
+bool Mutation::isLucky(int length){
   int rand_max = 1000000;
-  if( (float(rand() % rand_max) / rand_max) < energy)
+  if( (float(rand() % rand_max) / rand_max) < (energy / length))
     return true;
   return false;
 }
@@ -57,7 +57,7 @@ void Mutation::singleWalkingBit(OnMutateFunc cb) {
   for (stageCur = 0; stageCur < stageMax ; stageCur += 1) {
     if(!isWorthFlipping(stageCur)
       || !isCritical(stageCur)
-      || !isLucky()
+      || !isLucky(8)
       ){
       count += 1;
       continue;
@@ -79,7 +79,7 @@ void Mutation::twoWalkingBit(OnMutateFunc cb) {
         || !isWorthFlipping(stageCur + 1) 
         || !isCritical(stageCur) 
         || !isCritical(stageCur + 1)
-        || !isLucky()
+        || !isLucky(8)
       ){
       count += 1;
       continue;
@@ -107,7 +107,7 @@ void Mutation::fourWalkingBit(OnMutateFunc cb) {
       || !isCritical(stageCur + 1)
       || !isCritical(stageCur + 2)
       || !isCritical(stageCur + 3)
-      || !isLucky()
+      || !isLucky(8)
       ){
       count += 1;
       continue;
@@ -139,7 +139,7 @@ void Mutation::singleWalkingByte(OnMutateFunc cb) {
       }
     }
     if(flag 
-      || !isLucky()
+      || !isLucky(1)
       ){
       count += 1;
       continue;
@@ -185,7 +185,7 @@ void Mutation::twoWalkingByte(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky()
+      || !isLucky(1)
       ){
       stageMax--;
       continue;
@@ -220,7 +220,7 @@ void Mutation::fourWalkingByte(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] && 
       !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-      || !isLucky()
+      || !isLucky(1)
       ){
       stageMax --;
       continue;
@@ -249,7 +249,7 @@ void Mutation::singleArith(OnMutateFunc cb) {
     /* Let's consult the effector map... */
     if (flag 
       || !eff[effAPos(i)] 
-      || !isLucky()
+      || !isLucky(1)
       ){
       stageMax -= (2 * ARITH_MAX);
       continue;
@@ -292,7 +292,7 @@ void Mutation::twoArith(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky()
+      || !isLucky(1)
       ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
@@ -347,7 +347,7 @@ void Mutation::fourArith(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] 
         && !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky()
+        || !isLucky(1)
       ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
@@ -400,6 +400,7 @@ void Mutation::singleInterest(OnMutateFunc cb) {
     /* Let's consult the effector map... */
     if (flag 
       || !eff[effAPos(i)] 
+      || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_8);
       continue;
@@ -436,6 +437,7 @@ void Mutation::twoInterest(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
+      || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_16);
       continue;
@@ -482,6 +484,7 @@ void Mutation::fourInterest(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&
         !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
+        || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_32) >> 1;
       continue;

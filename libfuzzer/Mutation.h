@@ -30,7 +30,7 @@ namespace fuzzer {
       /* calculate if the paramater of this pos belongs to a critical function */
       bool isCritical(int pos);
       /* calculate if it is need to jump over this round of mutation */
-      bool isLucky();
+      bool isLucky(int length);
       void singleWalkingBit(OnMutateFunc cb);
       void twoWalkingBit(OnMutateFunc cb);
       void fourWalkingBit(OnMutateFunc cb);
