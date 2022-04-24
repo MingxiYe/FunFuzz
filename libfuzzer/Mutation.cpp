@@ -139,7 +139,6 @@ void Mutation::singleWalkingByte(OnMutateFunc cb) {
       }
     }
     if(flag 
-      || !isLucky(1)
       ){
       count += 1;
       continue;
@@ -185,7 +184,6 @@ void Mutation::twoWalkingByte(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky(1)
       ){
       stageMax--;
       continue;
@@ -220,7 +218,6 @@ void Mutation::fourWalkingByte(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] && 
       !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-      || !isLucky(1)
       ){
       stageMax --;
       continue;
@@ -249,7 +246,6 @@ void Mutation::singleArith(OnMutateFunc cb) {
     /* Let's consult the effector map... */
     if (flag 
       || !eff[effAPos(i)] 
-      || !isLucky(1)
       ){
       stageMax -= (2 * ARITH_MAX);
       continue;
@@ -292,7 +288,6 @@ void Mutation::twoArith(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky(1)
       ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
@@ -347,7 +342,6 @@ void Mutation::fourArith(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] 
         && !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky(1)
       ) {
       stageMax -= 4 * ARITH_MAX;
       continue;
@@ -400,7 +394,6 @@ void Mutation::singleInterest(OnMutateFunc cb) {
     /* Let's consult the effector map... */
     if (flag 
       || !eff[effAPos(i)] 
-      || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_8);
       continue;
@@ -437,7 +430,6 @@ void Mutation::twoInterest(OnMutateFunc cb) {
     if(flag 
       || (!eff[effAPos(i)] 
       && !eff[effAPos(i + 1)]) 
-      || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_16);
       continue;
@@ -484,7 +476,6 @@ void Mutation::fourInterest(OnMutateFunc cb) {
     if(flag 
         || (!eff[effAPos(i)] && !eff[effAPos(i + 1)] &&
         !eff[effAPos(i + 2)] && !eff[effAPos(i + 3)])
-        || !isLucky(1)
       ) {
       stageMax -= sizeof(INTERESTING_32) >> 1;
       continue;

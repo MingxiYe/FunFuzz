@@ -392,13 +392,8 @@ void Fuzzer::start() {
         auto dt = leaderIt->second.dt;
         auto D = 1;
         if(maxD != minD) D = (dt - minD)/(maxD - minD);
-        float Texp;
         float t = timer.elapsed();
-        if(t < 60){
-          Texp = 0;
-        }else{
-          Texp = 1 + exp(t / (225 * D));
-        }
+        float Texp = exp(t / (225 * D));
         float energy = pow(2, 3 * (1 - D) * (1 + Texp));
         // auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
@@ -461,21 +456,22 @@ void Fuzzer::start() {
         };
         // Haven't fuzzed before
         if (!curItem.fuzzedCount) {
-          Logger::debug("SingleWalkingBit");
-          mutation.singleWalkingBit(save);
-          fuzzStat.stageFinds[STAGE_FLIP1] += leaders.size() - originHitCount;
-          originHitCount = leaders.size();
+          if(timer.elapsed() > 60){
+            Logger::debug("SingleWalkingBit");
+            mutation.singleWalkingBit(save);
+            fuzzStat.stageFinds[STAGE_FLIP1] += leaders.size() - originHitCount;
+            originHitCount = leaders.size();
 
-          Logger::debug("TwoWalkingBit");
-          mutation.twoWalkingBit(save);
-          fuzzStat.stageFinds[STAGE_FLIP2] += leaders.size() - originHitCount;
-          originHitCount = leaders.size();
+            Logger::debug("TwoWalkingBit");
+            mutation.twoWalkingBit(save);
+            fuzzStat.stageFinds[STAGE_FLIP2] += leaders.size() - originHitCount;
+            originHitCount = leaders.size();
 
-          Logger::debug("FourWalkingBit");
-          mutation.fourWalkingBit(save);
-          fuzzStat.stageFinds[STAGE_FLIP4] += leaders.size() - originHitCount;
-          originHitCount = leaders.size();
-
+            Logger::debug("FourWalkingBit");
+            mutation.fourWalkingBit(save);
+            fuzzStat.stageFinds[STAGE_FLIP4] += leaders.size() - originHitCount;
+            originHitCount = leaders.size();
+          }
           Logger::debug("SingleWalkingByte");
           mutation.singleWalkingByte(save);
           fuzzStat.stageFinds[STAGE_FLIP8] += leaders.size() - originHitCount;
