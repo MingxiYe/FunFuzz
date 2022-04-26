@@ -114,6 +114,14 @@ vector<bool> OracleFactory::analyze() {
             }
             break;
           }
+          case SUICIDAL: {
+            auto has_destory = false;
+            for (auto ctx : function) {
+              has_destory = has_destory || ctx.payload.inst == Instruction::SUICIDE;
+            }
+            vulnerabilities[i] = has_destory;
+            break;
+          }
         }
       }
     }

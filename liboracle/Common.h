@@ -16,6 +16,7 @@ const uint8_t REENTRANCY = 5;
 const uint8_t FREEZING = 6;
 const uint8_t INT_OVERFLOW = 7;
 const uint8_t INT_UNDERFLOW = 8;
+const uint8_t SUICIDAL = 9;
 
 struct OpcodePayload {
   u256 wei = 0;

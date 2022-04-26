@@ -156,7 +156,7 @@ void Fuzzer::showStats(const Mutation &mutation, const tuple<unordered_set<uint6
   printf(bH "      exception disorder : %s " bH "         freezing ether : %s " bH "\n", toResult(vulnerabilities[EXCEPTION_DISORDER]), toResult(vulnerabilities[FREEZING]));
   printf(bH "              reentrancy : %s " bH "       integer overflow : %s " bH "\n", toResult(vulnerabilities[REENTRANCY]), toResult(vulnerabilities[INT_OVERFLOW]));
   printf(bH "    timestamp dependency : %s " bH "      integer underflow : %s " bH "\n", toResult(vulnerabilities[TIME_DEPENDENCY]), toResult(vulnerabilities[INT_UNDERFLOW]));
-  printf(bH " block number dependency : %s " bH "%s" bH "\n", toResult(vulnerabilities[NUMBER_DEPENDENCY]), padStr(" ", 32).c_str());
+  printf(bH " block number dependency : %s " bH "       sucidal contract : %s " bH "\n", toResult(vulnerabilities[NUMBER_DEPENDENCY]), toResult(vulnerabilities[SUICIDAL]));
   printf(bBL bV20 bV2 bV10 bV5 bV2 bV bBTR bV10 bV5 bV20 bV2 bV2 bBR "\n");
 }
 
@@ -190,6 +190,7 @@ void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint
   root.put("timestamp dependency", toResult(vulnerabilities[TIME_DEPENDENCY]));
   root.put("integer underflow", toResult(vulnerabilities[INT_UNDERFLOW]));
   root.put("block number dependency", toResult(vulnerabilities[NUMBER_DEPENDENCY]));
+  root.put("sucidal contract", toResult(vulnerabilities[SUICIDAL]));
   pt::write_json(ss, root);
   stats << ss.str() << endl;
   stats.close();
@@ -231,7 +232,15 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
       Logger::debug("Find basicblock with offset: " + to_string(dest));
       /* if find critical opcodes */
       vector<Opcode*> opcodes = (*basicBlockIter)->getOpcodes();
-      auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){return s->getOpcodeID() == OpcodeID::CALL || s->getOpcodeID() == OpcodeID::DELEGATECALL ||s->getOpcodeID() == OpcodeID::TIMESTAMP ||s->getOpcodeID() == OpcodeID::NUMBER ||s->getOpcodeID() == OpcodeID::INVALID;});
+      auto opcodeIter = find_if(opcodes.begin(), 
+                                opcodes.end(), 
+                                [=](const Opcode* s){
+                                  return s->getOpcodeID() == OpcodeID::CALL 
+                                      || s->getOpcodeID() == OpcodeID::DELEGATECALL 
+                                      || s->getOpcodeID() == OpcodeID::TIMESTAMP 
+                                      || s->getOpcodeID() == OpcodeID::NUMBER 
+                                      || s->getOpcodeID() == OpcodeID::INVALID
+                                      || s->getOpcodeID() == OpcodeID::SELFDESTRUCT;});
       if(opcodeIter != opcodes.end()){
         fdIter->isCritical = true;
         Logger::debug("Find critical function: " + fdIter->name);
@@ -516,11 +525,6 @@ void Fuzzer::start() {
           mutation.fourInterest(save);
           fuzzStat.stageFinds[STAGE_INTEREST32] += leaders.size() - originHitCount;
           originHitCount = leaders.size();
-
-          // Logger::debug("overwriteDict");
-          // mutation.overwriteWithDictionary(save);
-          // fuzzStat.stageFinds[STAGE_EXTRAS_UO] += leaders.size() - originHitCount;
-          // originHitCount = leaders.size();
 
           Logger::debug("overwriteAddress");
           mutation.overwriteWithAddressDictionary(save);
