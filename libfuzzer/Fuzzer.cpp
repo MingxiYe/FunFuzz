@@ -232,15 +232,13 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
       Logger::debug("Find basicblock with offset: " + to_string(dest));
       /* if find critical opcodes */
       vector<Opcode*> opcodes = (*basicBlockIter)->getOpcodes();
-      auto opcodeIter = find_if(opcodes.begin(), 
-                                opcodes.end(), 
-                                [=](const Opcode* s){
-                                  return s->getOpcodeID() == OpcodeID::CALL 
-                                      || s->getOpcodeID() == OpcodeID::DELEGATECALL 
-                                      || s->getOpcodeID() == OpcodeID::TIMESTAMP 
-                                      || s->getOpcodeID() == OpcodeID::NUMBER 
-                                      || s->getOpcodeID() == OpcodeID::INVALID
-                                      || s->getOpcodeID() == OpcodeID::SELFDESTRUCT;});
+      auto opcodeIter = find_if(opcodes.begin(), opcodes.end(), [=](const Opcode* s){
+        return s->getOpcodeID() == OpcodeID::CALL 
+            || s->getOpcodeID() == OpcodeID::DELEGATECALL 
+            || s->getOpcodeID() == OpcodeID::TIMESTAMP 
+            || s->getOpcodeID() == OpcodeID::NUMBER 
+            || s->getOpcodeID() == OpcodeID::INVALID
+            || s->getOpcodeID() == OpcodeID::SELFDESTRUCT;});
       if(opcodeIter != opcodes.end()){
         fdIter->isCritical = true;
         Logger::debug("Find critical function: " + fdIter->name);
@@ -402,8 +400,8 @@ void Fuzzer::start() {
         auto D = 1;
         if(maxD != minD) D = (dt - minD)/(maxD - minD);
         float t = timer.elapsed();
-        float Texp = exp(t / (225 * D));
-        float energy = pow(2, 3 * (1 - D) * (1 + Texp));
+        float Texp = exp(t / (1537 * D));
+        float energy = pow(2, 3 * (1 - D) * Texp);
         // auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
           Logger::debug(" == Leader ==");

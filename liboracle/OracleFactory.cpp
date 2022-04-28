@@ -18,7 +18,7 @@ void OracleFactory::save(OpcodeContext ctx) {
 }
 
 vector<bool> OracleFactory::analyze() {
-  uint8_t total = 9;
+  uint8_t total = 10;
   while (vulnerabilities.size() < total) {
     vulnerabilities.push_back(false);
   }
