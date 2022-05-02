@@ -62,6 +62,8 @@ namespace fuzzer {
     unordered_set<string> uniqExceptions;
     float maxD = -1;
     float minD = -1;
+    int cfun = 0;
+    int funs = 0;
     Timer timer;
     FuzzParam fuzzParam;
     FuzzStat fuzzStat;

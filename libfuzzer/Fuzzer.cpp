@@ -199,6 +199,8 @@ void Fuzzer::writeStats(const Mutation &mutation, const tuple<unordered_set<uint
 /* determine which function is critical in ContractABI */
 void Fuzzer::determineCriticism(ContractABI* mainCA){
   vector<BasicBlock*> basicBlocks = fuzzedContract->getRuntimeCfg()->getBasicBlocksForIteration();
+  funs = mainCA->fds.size();
+  cfun = 0;
   for(vector<FuncDef>::iterator fdIter = mainCA->fds.begin(); fdIter != mainCA->fds.end(); ++fdIter){
     Logger::debug("---------------------------------");
     Logger::debug("Generate test case for " + fdIter->name);
@@ -241,6 +243,7 @@ void Fuzzer::determineCriticism(ContractABI* mainCA){
             || s->getOpcodeID() == OpcodeID::SELFDESTRUCT;});
       if(opcodeIter != opcodes.end()){
         fdIter->isCritical = true;
+        cfun += 1;
         Logger::debug("Find critical function: " + fdIter->name);
         break;
       }
@@ -463,7 +466,7 @@ void Fuzzer::start() {
         };
         // Haven't fuzzed before
         if (!curItem.fuzzedCount) {
-          if(timer.elapsed() > 60){
+          if(timer.elapsed() > (120 * (1 - float(cfun)/float(funs)))){
             Logger::debug("SingleWalkingBit");
             mutation.singleWalkingBit(save);
             fuzzStat.stageFinds[STAGE_FLIP1] += leaders.size() - originHitCount;
