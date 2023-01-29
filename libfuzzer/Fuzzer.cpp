@@ -402,9 +402,14 @@ void Fuzzer::start() {
         auto dt = leaderIt->second.dt;
         auto D = 1;
         if(maxD != minD) D = (dt - minD)/(maxD - minD);
-        float t = timer.elapsed();
-        float Texp = exp(t / (1537 * D));
+        float t = timer.elapsed() / fuzzParam.duration;
+        // float Texp = exp(t / (1537 * D));
+        // float energy = pow(2, 3 * (1 - D) * Texp);
+        float Texp = exp(- D / t);
         float energy = pow(2, 3 * (1 - D) * Texp);
+        if (D > 0.1) {
+          energy = 0;
+        }
         // auto f = pow(2, 3*(1 - d));
         if (dt != 0) {
           Logger::debug(" == Leader ==");
@@ -466,7 +471,7 @@ void Fuzzer::start() {
         };
         // Haven't fuzzed before
         if (!curItem.fuzzedCount) {
-          if(timer.elapsed() > (120 * (1 - float(cfun)/float(funs)))){
+          // if(timer.elapsed() > (120 * (1 - float(cfun)/float(funs)))){
             Logger::debug("SingleWalkingBit");
             mutation.singleWalkingBit(save);
             fuzzStat.stageFinds[STAGE_FLIP1] += leaders.size() - originHitCount;
@@ -481,7 +486,7 @@ void Fuzzer::start() {
             mutation.fourWalkingBit(save);
             fuzzStat.stageFinds[STAGE_FLIP4] += leaders.size() - originHitCount;
             originHitCount = leaders.size();
-          }
+          // }
           Logger::debug("SingleWalkingByte");
           mutation.singleWalkingByte(save);
           fuzzStat.stageFinds[STAGE_FLIP8] += leaders.size() - originHitCount;

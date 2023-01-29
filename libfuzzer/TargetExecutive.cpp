@@ -190,7 +190,7 @@ namespace fuzzer {
             /* calculate if command inside a function */
             u256 temp = left > right ? left - right : right - left;
             /* set K as 5 when this branch does not belong to a critical function */
-            lastCompValue = (temp + 1) * 2;
+            lastCompValue = (temp + 1) * 10000000000000000000;
           }
           break;
         }
