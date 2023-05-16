@@ -244,7 +244,7 @@ namespace fuzzer {
           case 0: {
             int realLen = td.isDynamic ? consultRealLen() : 32;
             int containerLen = consultContainerLen(realLen);
-            bytes data(containerLen, 0);
+            bytes data(containerLen, 1);
             ret.insert(ret.end(), data.begin(), data.end());
             break;
           }
@@ -253,7 +253,7 @@ namespace fuzzer {
             for (int i = 0; i < numElem; i += 1) {
               int realLen = td.isDynamic ? consultRealLen() : 32;
               int containerLen = consultContainerLen(realLen);
-              bytes data = bytes(containerLen, 0);
+              bytes data = bytes(containerLen, 1);
               ret.insert(ret.end(), data.begin(), data.end());
             }
             break;
@@ -265,7 +265,7 @@ namespace fuzzer {
               for (int j = 0; j < numSubElem; j += 1) {
                 int realLen = td.isDynamic ? consultRealLen() : 32;
                 int containerLen = consultContainerLen(realLen);
-                bytes data = bytes(containerLen, 0);
+                bytes data = bytes(containerLen, 1);
                 ret.insert(ret.end(), data.begin(), data.end());
               }
             }

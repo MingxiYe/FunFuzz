@@ -50,7 +50,7 @@ namespace fuzzer {
   static u256 MAX_GAS = 100000000000;
   static u160 ATTACKER_ADDRESS = 0xf0;
   static u160 CONTRACT_ADDRESS = 0xf1;
-  static u256 DEFAULT_BALANCE = 0xffffffffff;
+  static u256 DEFAULT_BALANCE = 0xfffffffffffffff;
   static OnOpFunc EMPTY_ONOP = [](u64, u64, Instruction, bigint, bigint, bigint, VMFace const*, ExtVMFace const*) {};
 
   static u32 SPLICE_CYCLES = 15;

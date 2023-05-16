@@ -231,7 +231,7 @@ namespace fuzzer {
     OpcodePayload payload;
     payload.inst = Instruction::CALL;
     payload.data = ca.encodeConstructor();
-    payload.wei = ca.isPayable("") ? program->getBalance(sender) / 2 : 0;
+    payload.wei = ca.isPayable("") ? program->getBalance(sender) / 50 : 0;
     payload.caller = sender;
     payload.callee = addr;
     oracleFactory->save(OpcodeContext(0, payload));

@@ -425,9 +425,9 @@ void Fuzzer::start() {
           u64 duration = timer.elapsed();
           if (!showSet.count(duration)) {
             showSet.insert(duration);
-            if (duration % fuzzParam.analyzingInterval == 0) {
-              vulnerabilities = container.analyze();
-            }
+            // if (duration % fuzzParam.analyzingInterval == 0) {
+            vulnerabilities = container.analyze();
+            // }
             switch (fuzzParam.reporter) {
               case TERMINAL: {
                 showStats(mutation, validJumpis);
